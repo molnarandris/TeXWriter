@@ -20,11 +20,19 @@
           </object>
         </child>
         <property name="content">
-          <object class="GtkLabel" id="label">
-            <property name="label">Hello, World!</property>
-            <style>
-              <class name="title-1"/>
-            </style>
+          <object class="GtkPaned">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <child>
+              <object class="GtkTextView">
+                <property name="width-request">200</property>
+              </object>
+            </child>
+            <child>
+              <object class="AdwStatusPage">
+                <property name="title">No PDF to display</property>
+              </object>
+            </child>
           </object>
         </property>
       </object>
