@@ -19,6 +19,7 @@
 
 from gi.repository import Adw
 from gi.repository import Gtk
+from gi.repository import Gio
 
 @Gtk.Template(resource_path='/com/github/molnarandris/texwriter/ui/window.ui')
 class TexwriterWindow(Adw.ApplicationWindow):
@@ -27,3 +28,31 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        action = Gio.SimpleAction.new("open", None)
+        action.connect("activate", self.open_document)
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("save", None)
+        action.connect("activate", self.save_document)
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("compile", None)
+        action.connect("activate", self.compile_document)
+        self.add_action(action)
+
+        action = Gio.SimpleAction.new("synctex-fwd", None)
+        action.connect("activate", self.compile_document)
+        self.add_action(action)
+
+    def open_document(self, _action, _value):
+        pass
+
+    def save_document(self, _action, _value):
+        pass
+
+    def compile_document(self, _action, _value):
+        pass
+
+    def syntex_fwd(self, _action, _value):
+        pass
