@@ -25,10 +25,19 @@ from gi.repository import Gio
 class TexwriterWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'TexwriterWindow'
 
+    paned = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        # Save and restore window geometry
+        settings = Gio.Settings.new("com.github.molnarandris.texwriter")
+        settings.bind("width", self, "default-width", Gio.SettingsBindFlags.DEFAULT)
+        settings.bind("height", self, "default-height", Gio.SettingsBindFlags.DEFAULT)
+        settings.bind("maximized", self, "maximized", Gio.SettingsBindFlags.DEFAULT)
+        settings.bind("paned-position", self.paned, "position", Gio.SettingsBindFlags.DEFAULT)
+
+        # Set up window actions
         action = Gio.SimpleAction.new("open", None)
         action.connect("activate", self.open_document)
         self.add_action(action)
@@ -44,6 +53,13 @@ class TexwriterWindow(Adw.ApplicationWindow):
         action = Gio.SimpleAction.new("synctex-fwd", None)
         action.connect("activate", self.compile_document)
         self.add_action(action)
+
+        # Setting paned resize-start-child and resize-end-child True
+        # makes the paned to keep the relative position at resize.
+        # However, this doesn't work from the ui file.
+        self.paned.set_resize_start_child(True)
+        self.paned.set_resize_end_child(True)
+
 
     def open_document(self, _action, _value):
         pass

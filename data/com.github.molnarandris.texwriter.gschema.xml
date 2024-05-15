@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="texwriter">
 	<schema id="com.github.molnarandris.texwriter" path="/com/github/molnarandris/texwriter/">
+    <key name="width" type="i">
+      <default>840</default>
+      <summary>Window width</summary>
+      <description>Width of the window</description>
+    </key>
+    <key name="height" type="i">
+      <default>640</default>
+      <summary>Window height</summary>
+      <description>Height of the window</description>
+    </key>
+    <key name="maximized" type="b">
+      <default>false</default>
+      <summary>Maximized</summary>
+      <description>Whether the window is maximized</description>
+    </key>
+    <key name="paned-position" type="i">
+      <default>150</default>
+      <summary>Pane position</summary>
+      <description>The position of the division</description>
+    </key>
 	</schema>
 </schemalist>
