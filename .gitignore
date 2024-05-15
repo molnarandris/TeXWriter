@@ -1,0 +1,13 @@
+*.pyc
+__pycache__/
+_build/*
+build/
+*.*~
+.vscode/
+builddir/*
+build-aux/flatpak/_build/*
+build-aux/flatpak/.flatpak-builder/*
+flatpak/*
+.mypy_cache/
+.flatpak/
+.flatpak-builder/

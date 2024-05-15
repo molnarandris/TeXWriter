@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=texwriter
+Exec=texwriter
+Icon=com.github.molnarandris.texwriter
+Terminal=false
+Type=Application
+Categories=GTK;
+StartupNotify=true

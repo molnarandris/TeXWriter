@@ -1,0 +1,6 @@
+data/com.github.molnarandris.texwriter.desktop.in
+data/com.github.molnarandris.texwriter.metainfo.xml.in
+data/com.github.molnarandris.texwriter.gschema.xml
+src/main.py
+src/window.py
+src/window.ui
