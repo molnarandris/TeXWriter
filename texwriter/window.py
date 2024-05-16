@@ -92,6 +92,12 @@ class TexwriterWindow(Adw.ApplicationWindow):
         file.load_contents_async(None, self.load_file_complete)
 
     def load_file_complete(self, file, result):
+        info = file.query_info("standard::display-name", Gio.FileQueryInfoFlags.NONE)
+        if info:
+            display_name = info.get_attribute_string("standard::display-name")
+        else:
+            display_name = file.get_basename()
+
         contents = file.load_contents_finish(result)
         if not contents[0]:
             path = file.peek_path()
@@ -106,6 +112,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
         buffer = self.textview.get_buffer()
         buffer.set_text(text)
+
+        self.set_title(display_name)
 
     def save_document(self, _action, _value):
         pass
