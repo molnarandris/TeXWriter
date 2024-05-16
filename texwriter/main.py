@@ -32,7 +32,7 @@ class TexwriterApplication(Adw.Application):
 
     def __init__(self):
         super().__init__(application_id='com.github.molnarandris.texwriter',
-                         flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
+                         flags=Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE)
 
         action = Gio.SimpleAction.new('quit', None)
         action.connect("activate", lambda *_: self.quit())
@@ -64,6 +64,24 @@ class TexwriterApplication(Adw.Application):
             win = TexwriterWindow(application=self)
         win.present()
 
+    def do_open(self, files, _n_files, _hint):
+        self.activate()
+
+        def window_filter(win):
+            buf = win.textview.get_buffer()
+            txt = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+            return txt == "" and not buf.get_modified()
+
+        empty_windows = list(filter(window_filter, self.get_main_windows()))
+        for i, file in enumerate(files):
+            if i < len(empty_windows):
+                win = empty_windows[i]
+            else:
+                win = TexwriterWindow(application=self)
+
+            win.load_file(file)
+            win.present()
+
     def on_about_action(self, widget, _):
         """Callback for the app.about action."""
         about = Adw.AboutWindow(transient_for=self.props.active_window,
@@ -78,6 +96,9 @@ class TexwriterApplication(Adw.Application):
     def on_preferences_action(self, widget, _):
         """Callback for the app.preferences action."""
         print('app.preferences action activated')
+
+    def get_main_windows(self):
+        return [window for window in self.get_windows() if isinstance(window, TexwriterWindow)]
 
 
 def main(version):

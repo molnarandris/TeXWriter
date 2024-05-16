@@ -24,7 +24,7 @@
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <child>
-              <object class="GtkTextView">
+              <object class="GtkTextView" id="textview">
                 <property name="width-request">200</property>
               </object>
             </child>

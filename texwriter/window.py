@@ -20,12 +20,19 @@
 from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import Gio
+from gi.repository import GLib
+
+import sys
+import logging
+logging.basicConfig(level=logging.NOTSET)
+logger = logging.getLogger("Texwriter")
 
 @Gtk.Template(resource_path='/com/github/molnarandris/texwriter/ui/window.ui')
 class TexwriterWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'TexwriterWindow'
 
     paned = Gtk.Template.Child()
+    textview = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -62,7 +69,43 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
 
     def open_document(self, _action, _value):
-        pass
+
+        dialog = Gtk.FileDialog()
+        dialog.open(self, None, self.open_document_complete)
+
+    def open_document_complete(self, dialog, response):
+        try:
+            file = dialog.open_finish(response)
+        except GLib.Error as err:
+            if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
+                logger.info("File selection was dismissed: %s", err.message)
+                return
+            else:
+                raise
+        if file:
+            self.get_application().open([file], "")
+
+    def load_file(self, file=None):
+        """Open File from command line or open / open recent etc."""
+        logger.info("Opening %s", file.get_uri())
+
+        file.load_contents_async(None, self.load_file_complete)
+
+    def load_file_complete(self, file, result):
+        contents = file.load_contents_finish(result)
+        if not contents[0]:
+            path = file.peek_path()
+            logger.warning(f"Unable to open {path}: {contents[1]}")
+            return
+        try:
+            text = contents[1].decode('utf-8')
+        except UnicodeError as err:
+            path = file.peek_path()
+            logger.warning(f"Unable to load the contents of {path}: the file is not encoded with UTF-8")
+            return
+
+        buffer = self.textview.get_buffer()
+        buffer.set_text(text)
 
     def save_document(self, _action, _value):
         pass
