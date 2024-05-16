@@ -26,6 +26,9 @@
             <child>
               <object class="GtkTextView" id="textview">
                 <property name="width-request">200</property>
+                <style>
+                  <class name="texwriter-editor"/>
+                </style>
               </object>
             </child>
             <child>
