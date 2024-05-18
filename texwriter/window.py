@@ -67,6 +67,9 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.paned.set_resize_start_child(True)
         self.paned.set_resize_end_child(True)
 
+        self.textview.get_buffer().connect("changed", self.on_text_changed)
+        self.did_change = False
+        self.title = "New Document"
 
     def open_document(self, _action, _value):
 
@@ -113,6 +116,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         buffer = self.textview.get_buffer()
         buffer.set_text(text)
 
+        self.title = display_name
         self.set_title(display_name)
 
     def save_document(self, _action, _value):
@@ -123,3 +127,11 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     def syntex_fwd(self, _action, _value):
         pass
+
+    def on_text_changed(self, *_args):
+        if self.did_change:
+            return
+        self.did_change = True
+        prefix = "• "
+        title = prefix + self.title
+        self.set_title(title)
