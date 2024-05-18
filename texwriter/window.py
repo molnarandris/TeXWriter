@@ -33,6 +33,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     paned = Gtk.Template.Child()
     textview = Gtk.Template.Child()
+    toastoverlay = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -79,14 +80,17 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def open_document_complete(self, dialog, response):
         try:
             file = dialog.open_finish(response)
+            self.get_application().open([file], "")
         except GLib.Error as err:
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
                 logger.info("File selection was dismissed: %s", err.message)
                 return
             else:
-                raise
-        if file:
-            self.get_application().open([file], "")
+                # FIXME: which file? Why?
+                toast = Adw.Toast.new("Unable to open file")
+                toast.set_timeout(2)
+                self.toastoverlay.add_toast(toast)
+                logger.warning(f"Unable to open file")
 
     def load_file(self, file=None):
         """Open File from command line or open / open recent etc."""
@@ -104,12 +108,18 @@ class TexwriterWindow(Adw.ApplicationWindow):
         contents = file.load_contents_finish(result)
         if not contents[0]:
             path = file.peek_path()
+            toast = Adw.Toast.new("Unable to load file")
+            toast.set_timeout(2)
+            self.toastoverlay.add_toast(toast)
             logger.warning(f"Unable to open {path}: {contents[1]}")
             return
         try:
             text = contents[1].decode('utf-8')
         except UnicodeError as err:
             path = file.peek_path()
+            toast = Adw.Toast.new("The file is not UTF-8 encoded")
+            toast.set_timeout(2)
+            self.toastoverlay.add_toast(toast)
             logger.warning(f"Unable to load the contents of {path}: the file is not encoded with UTF-8")
             return
 
