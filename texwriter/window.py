@@ -68,8 +68,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.paned.set_resize_start_child(True)
         self.paned.set_resize_end_child(True)
 
-        self.textview.get_buffer().connect("changed", self.on_text_changed)
-        self.did_change = False
+        # TODO: override textbuffer's do_modified_changed.
+        self.textview.get_buffer().connect("modified-changed", self.on_buffer_modified_changed)
         self.title = "New Document"
 
     def open_document(self, _action, _value):
@@ -138,10 +138,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def syntex_fwd(self, _action, _value):
         pass
 
-    def on_text_changed(self, *_args):
-        if self.did_change:
-            return
-        self.did_change = True
-        prefix = "• "
-        title = prefix + self.title
-        self.set_title(title)
+    def on_buffer_modified_changed(self, *_args):
+        modified = self.textview.get_buffer().get_modified()
+        if modified:
+            prefix = "• "
+        else:
+            prefix = ""
+        self.set_title(prefix + self.title)
