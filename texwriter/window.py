@@ -51,7 +51,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.add_action(action)
 
         action = Gio.SimpleAction.new("save", None)
-        action.connect("activate", self.save_document)
+        action.connect("activate", self.on_save_action)
         self.add_action(action)
 
         action = Gio.SimpleAction.new("compile", None)
@@ -71,6 +71,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         # TODO: override textbuffer's do_modified_changed.
         self.textview.get_buffer().connect("modified-changed", self.on_buffer_modified_changed)
         self.title = "New Document"
+        self.file = None
 
     def open_document(self, _action, _value):
 
@@ -125,12 +126,54 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
         buffer = self.textview.get_buffer()
         buffer.set_text(text)
+        buffer.set_modified(False)
 
         self.title = display_name
         self.set_title(display_name)
+        self.file = file
 
-    def save_document(self, _action, _value):
-        pass
+    def on_save_action(self, _action, _value):
+        if self.file:
+            self.save_file(self.file)
+            return
+        native = Gtk.FileDialog()
+        native.save(self, None, self.on_save_response)
+
+    def on_save_response(self, dialog, result):
+        file = dialog.save_finish(result)
+        if file is not None:
+            self.save_file(file)
+
+    def save_file(self, file):
+        buffer = self.textview.get_buffer()
+        start = buffer.get_start_iter()
+        end = buffer.get_end_iter()
+        text = buffer.get_text(start, end, False)
+        bytes = GLib.Bytes.new(text.encode('utf-8'))
+
+        file.replace_contents_bytes_async(bytes,
+                                          None,
+                                          False,
+                                          Gio.FileCreateFlags.NONE,
+                                          None,
+                                          self.save_file_complete)
+
+    def save_file_complete(self, file, result):
+        res = file.replace_contents_finish(result)
+        info = file.query_info("standard::display-name",
+                               Gio.FileQueryInfoFlags.NONE)
+        if info:
+            display_name = info.get_attribute_string("standard::display-name")
+        else:
+            display_name = file.get_basename()
+        if res:
+            self.textview.get_buffer().set_modified(False)
+            self.file = file
+        else:
+            toast = Adw.Toast.new(f"Unable to save {display_name}")
+            toast.set_timeout(2)
+            self.toastoverlay.add_toast(toast)
+            logger.warning(f"Unable to save {display_name}")
 
     def compile_document(self, _action, _value):
         pass
@@ -140,6 +183,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     def on_buffer_modified_changed(self, *_args):
         modified = self.textview.get_buffer().get_modified()
+        logger.info(f"Modified callback, {modified}")
         if modified:
             prefix = "• "
         else:
