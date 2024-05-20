@@ -35,7 +35,7 @@ class TexwriterApplication(Adw.Application):
                          flags=Gio.ApplicationFlags.HANDLES_OPEN | Gio.ApplicationFlags.NON_UNIQUE)
 
         action = Gio.SimpleAction.new('quit', None)
-        action.connect("activate", lambda *_: self.quit())
+        action.connect("activate", self.on_quit)
         self.add_action(action)
 
         action = Gio.SimpleAction.new('about', None)
@@ -99,6 +99,14 @@ class TexwriterApplication(Adw.Application):
 
     def get_main_windows(self):
         return [window for window in self.get_windows() if isinstance(window, TexwriterWindow)]
+
+    def on_quit(self, _action, _param):
+        quit = True
+        for window in self.get_windows():
+            if window.do_close_request():
+                quit = False
+        if quit:
+            self.quit()
 
 
 def main(version):

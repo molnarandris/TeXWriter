@@ -148,7 +148,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 logger.info("File save selection was dismissed: %s", err.message)
                 return
             else:
-                raise
+                toast = Adw.Toast.new("Unable to save file")
+                toast.set_timeout(2)
+                self.toastoverlay.add_toast(toast)
+                logger.warning(f"Unable to save file: {err}")
 
         if file is not None:
             self.save_file(file, callback)
@@ -169,21 +172,23 @@ class TexwriterWindow(Adw.ApplicationWindow):
                                           callback)
 
     def save_file_complete(self, file, result, callback):
-        res = file.replace_contents_finish(result)
-        info = file.query_info("standard::display-name",
-                               Gio.FileQueryInfoFlags.NONE)
-        if info:
-            display_name = info.get_attribute_string("standard::display-name")
-        else:
-            display_name = file.get_basename()
-        if res:
+        try:
+            file.replace_contents_finish(result)
             self.textview.get_buffer().set_modified(False)
             self.file = file
-        else:
+        except:
+            info = file.query_info("standard::display-name",
+                                   Gio.FileQueryInfoFlags.NONE)
+            if info:
+                display_name = info.get_attribute_string("standard::display-name")
+            else:
+                display_name = file.get_basename()
+
             toast = Adw.Toast.new(f"Unable to save {display_name}")
             toast.set_timeout(2)
             self.toastoverlay.add_toast(toast)
             logger.warning(f"Unable to save {display_name}")
+
         if callback:
             callback()
 
