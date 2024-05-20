@@ -182,17 +182,21 @@ class TexwriterWindow(Adw.ApplicationWindow):
                                           callback)
 
     def save_file_complete(self, file, result, callback):
+
+        info = file.query_info("standard::display-name",
+                               Gio.FileQueryInfoFlags.NONE)
+        if info:
+            display_name = info.get_attribute_string("standard::display-name")
+        else:
+            display_name = file.get_basename()
+
         try:
             file.replace_contents_finish(result)
             self.textview.get_buffer().set_modified(False)
             self.file = file
+            self.title = display_name
+            self.set_title(display_name)
         except:
-            info = file.query_info("standard::display-name",
-                                   Gio.FileQueryInfoFlags.NONE)
-            if info:
-                display_name = info.get_attribute_string("standard::display-name")
-            else:
-                display_name = file.get_basename()
 
             toast = Adw.Toast.new(f"Unable to save {display_name}")
             toast.set_timeout(2)
