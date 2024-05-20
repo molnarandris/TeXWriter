@@ -54,6 +54,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
         action.connect("activate", lambda *_: self.save())
         self.add_action(action)
 
+        action = Gio.SimpleAction.new("save-as", None)
+        action.connect("activate", lambda *_: self.save_as())
+        self.add_action(action)
+
         action = Gio.SimpleAction.new("compile", None)
         action.connect("activate", self.compile_document)
         self.add_action(action)
@@ -134,13 +138,19 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.file = file
 
     def save(self, callback=None):
+        logger.info("Save function called")
         if self.file:
             self.save_file(self.file)
             return
+        self.save_as(callback)
+
+    def save_as(self, callback=None):
+        logger.info("Save_as function called")
         native = Gtk.FileDialog()
         native.save(self, None, self.on_save_response, callback)
 
     def on_save_response(self, dialog, result, callback):
+        logger.info("Save response function called")
         try:
             file = dialog.save_finish(result)
         except GLib.Error as err:
