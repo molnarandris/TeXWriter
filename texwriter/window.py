@@ -51,7 +51,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.add_action(action)
 
         action = Gio.SimpleAction.new("save", None)
-        action.connect("activate", self.on_save_action)
+        action.connect("activate", lambda *_: self.save())
         self.add_action(action)
 
         action = Gio.SimpleAction.new("compile", None)
@@ -72,6 +72,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.textview.get_buffer().connect("modified-changed", self.on_buffer_modified_changed)
         self.title = "New Document"
         self.file = None
+        self.force_close = False
 
     def open_document(self, _action, _value):
 
@@ -132,19 +133,27 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.set_title(display_name)
         self.file = file
 
-    def on_save_action(self, _action, _value):
+    def save(self, callback=None):
         if self.file:
             self.save_file(self.file)
             return
         native = Gtk.FileDialog()
-        native.save(self, None, self.on_save_response)
+        native.save(self, None, self.on_save_response, callback)
 
-    def on_save_response(self, dialog, result):
-        file = dialog.save_finish(result)
+    def on_save_response(self, dialog, result, callback):
+        try:
+            file = dialog.save_finish(result)
+        except GLib.Error as err:
+            if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
+                logger.info("File save selection was dismissed: %s", err.message)
+                return
+            else:
+                raise
+
         if file is not None:
-            self.save_file(file)
+            self.save_file(file, callback)
 
-    def save_file(self, file):
+    def save_file(self, file, callback=None):
         buffer = self.textview.get_buffer()
         start = buffer.get_start_iter()
         end = buffer.get_end_iter()
@@ -156,9 +165,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
                                           False,
                                           Gio.FileCreateFlags.NONE,
                                           None,
-                                          self.save_file_complete)
+                                          self.save_file_complete,
+                                          callback)
 
-    def save_file_complete(self, file, result):
+    def save_file_complete(self, file, result, callback):
         res = file.replace_contents_finish(result)
         info = file.query_info("standard::display-name",
                                Gio.FileQueryInfoFlags.NONE)
@@ -174,6 +184,44 @@ class TexwriterWindow(Adw.ApplicationWindow):
             toast.set_timeout(2)
             self.toastoverlay.add_toast(toast)
             logger.warning(f"Unable to save {display_name}")
+        if callback:
+            callback()
+
+    def do_close_request(self):
+        logger.info(f"Window close request, force = {self.force_close}")
+        if self.textview.get_buffer().get_modified() and not self.force_close:
+            dialog = Adw.AlertDialog.new(_("Save Changes?"),
+                                         _("“%s” contains unsaved changes. " +
+                                           "If you don’t save, " +
+                                           "all your changes will be " +
+                                           "permanently lost.") % self.title
+                                         )
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("close", _("Discard"))
+            dialog.add_response("save", _("Save"))
+            dialog.set_response_appearance("close", Adw.ResponseAppearance.DESTRUCTIVE)
+            dialog.set_response_appearance("save", Adw.ResponseAppearance.SUGGESTED)
+            dialog.set_default_response("save")
+            dialog.set_close_response("cancel")
+
+            dialog.connect("response", self.close_request_complete)
+            dialog.present(self)
+            return True
+        else:
+            return False
+
+    def close_request_complete(self, dialog, response):
+        """Show dialog to prevent loss of unsaved changes
+        """
+
+        match response:
+            case "cancel":
+                return
+            case "close":
+                self.force_close = True
+                self.close()
+            case "save":
+                self.save(callback = self.close)
 
     def compile_document(self, _action, _value):
         pass
