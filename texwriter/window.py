@@ -59,7 +59,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.add_action(action)
 
         action = Gio.SimpleAction.new("compile", None)
-        action.connect("activate", self.compile_document)
+        action.connect("activate", lambda *_: self.compile())
         self.add_action(action)
 
         action = Gio.SimpleAction.new("synctex-fwd", None)
@@ -81,6 +81,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         # If yes, we have to cancel it before starting a new one.
         # Ongoing operation = cancellable is not None
         self.save_cancellable = None
+        self.compile_cancellable = None
 
     def open_document(self, _action, _value):
 
@@ -214,6 +215,44 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.save_cancellable = None
         if callback:
             callback()
+
+    def compile(self):
+        logger.info("Compile called")
+        if self.compile_cancellable: self.compile_cancellable.cancel()
+        self.cancellable = None
+
+        # If needs saving, save first, then compile.
+        if self.textview.get_buffer().get_modified():
+            self.save(self.compile)
+        # Otherwise we can proceed with compiling
+        else:
+            self.cancellable = Gio.Cancellable()
+            pwd = self.file.get_parent().get_path()
+            cmd = ['flatpak-spawn', '--host', 'latexmk', '-synctex=1',
+                   '-interaction=nonstopmode', '-pdf', "-g",
+                   "--output-directory=" + pwd,
+                   self.file.get_path()]
+            flags = Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE
+            proc = Gio.Subprocess.new(cmd, flags)
+            proc.wait_async(cancellable=self.cancellable,
+                            callback=self.compile_complete)
+
+    def compile_complete(self, source, result):
+        logger.info("Compile complete")
+        try:
+            res = source.wait_finish(result)
+        except GLib.Error as err:
+            if err.matches(Gio.io_error_quark(), GLib.IOErrorEnum.CANCELLED):
+                logging.warning("Compiling file was cancelled: %s", err.message)
+            else:
+                raise
+        finally:
+            self.compile_cancellable = None
+
+        if not source.get_successful():
+            toast = Adw.Toast.new(f"Compilation of {self.file.get_path()} failed")
+            toast.set_timeout(2)
+            self.toastoverlay.add_toast(toast)
 
     def do_close_request(self):
         logger.info(f"Window close request, force = {self.force_close}")
