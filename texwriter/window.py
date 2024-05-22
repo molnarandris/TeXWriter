@@ -77,6 +77,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.title = "New Document"
         self.file = None
         self.force_close = False
+        # Keep track whether there is an ongoing operation.
+        # If yes, we have to cancel it before starting a new one.
+        # Ongoing operation = cancellable is not None
+        self.save_cancellable = None
 
     def open_document(self, _action, _value):
 
@@ -140,7 +144,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def save(self, callback=None):
         logger.info("Save function called")
         if self.file:
-            self.save_file(self.file)
+            self.save_file(self.file, callback)
             return
         self.save_as(callback)
 
@@ -173,13 +177,17 @@ class TexwriterWindow(Adw.ApplicationWindow):
         text = buffer.get_text(start, end, False)
         bytes = GLib.Bytes.new(text.encode('utf-8'))
 
-        file.replace_contents_bytes_async(bytes,
-                                          None,
-                                          False,
-                                          Gio.FileCreateFlags.NONE,
-                                          None,
-                                          self.save_file_complete,
-                                          callback)
+        if self.save_cancellable:
+            self.save_cancellable.cancel()
+        self.save_cancellable = Gio.Cancellable()
+
+        file.replace_contents_bytes_async(contents=bytes,
+                                          etag=None,
+                                          make_backup=False,
+                                          flags=Gio.FileCreateFlags.NONE,
+                                          cancellable=self.save_cancellable,
+                                          callback=self.save_file_complete,
+                                          user_data=callback)
 
     def save_file_complete(self, file, result, callback):
 
@@ -203,6 +211,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.toastoverlay.add_toast(toast)
             logger.warning(f"Unable to save {display_name}")
 
+        self.save_cancellable = None
         if callback:
             callback()
 
