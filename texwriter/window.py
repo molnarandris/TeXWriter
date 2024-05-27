@@ -21,6 +21,7 @@ from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GLib
+from .pdfviewer import PdfViewer
 
 import sys
 import logging
@@ -34,6 +35,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     paned = Gtk.Template.Child()
     textview = Gtk.Template.Child()
     toastoverlay = Gtk.Template.Child()
+    pdfview = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -141,6 +143,9 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.title = display_name
         self.set_title(display_name)
         self.file = file
+        pdfpath = file.get_path()[:-3] + "pdf"
+        pdffile = Gio.File.new_for_path(pdfpath)
+        self.pdfview.load_file(pdffile)
 
     def save(self, callback=None):
         logger.info("Save function called")

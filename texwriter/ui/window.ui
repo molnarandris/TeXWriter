@@ -44,8 +44,7 @@
                   </object>
                 </child>
                 <child>
-                  <object class="AdwStatusPage">
-                    <property name="title">No PDF to display</property>
+                  <object class="PdfViewer" id="pdfview">
                   </object>
                 </child>
               </object>
