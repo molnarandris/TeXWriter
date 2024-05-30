@@ -2,6 +2,7 @@ import gi
 import logging
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import GLib
 from gi.repository import Graphene
 gi.require_version('Poppler', '0.18')
 from gi.repository import Poppler
@@ -32,6 +33,10 @@ class PdfViewer(Gtk.ScrolledWindow):
         self.box.add_controller(controller)
 
     def load_file(self, file):
+        child = self.box.get_first_child()
+        while child:
+            self.box.remove(child)
+            child = self.box.get_first_child()
         try:
             poppler_doc = Poppler.Document.new_from_gfile(file, None, None)
             for i in range(poppler_doc.get_n_pages()):
@@ -59,6 +64,27 @@ class PdfViewer(Gtk.ScrolledWindow):
         for child in self.box:
             child.get_child().set_scale(self.scale)
         return Gdk.EVENT_STOP
+
+    def synctex_fwd(self, width, height, x, y, page):
+        rect = SynctexRect(width, height, x, y, self.scale)
+        overlay = self.get_page(page)
+        overlay.add_overlay(rect)
+        self.scroll_to(page,y)
+
+    def get_page(self, n):
+        child = self.box.get_first_child()
+        for i in range(n):
+            child = child.get_next_sibling()
+        return child
+
+    def scroll_to(self, page_num, y):
+        page = self.get_page(page_num).get_child()
+        point = Graphene.Point()
+        point.init(0,y)
+        _, p = page.compute_point(self.box, point)
+        viewport = self.box.get_parent()
+        vadj = viewport.get_vadjustment()
+        vadj.set_value(p.y-vadj.get_page_size()*0.302)
 
 class PdfPage(Gtk.Widget):
     __gtype_name__ = 'PdfPage'
@@ -103,4 +129,28 @@ class PdfPage(Gtk.Widget):
         ctx = snapshot.append_cairo(rect)
         ctx.scale(self.scale, self.scale)
         self.poppler_page.render(ctx)
+
+
+class SynctexRect(Gtk.Widget):
+    __gtype_name__ = 'SynctexRect'
+
+    def __init__(self, width, height, x,y,scale):
+        super().__init__()
+        height += 15
+        self.color = Gdk.RGBA()
+        self.color.parse("#FFF38080")
+        self.set_halign(Gtk.Align.START)
+        self.set_valign(Gtk.Align.START)
+        self.set_margin_top((y-height/2)*scale)
+        self.set_margin_start(x*scale)
+        GLib.timeout_add(700, self.do_destroy)
+        self.set_size_request(width*scale, height*scale)
+
+    def do_snapshot(self, snapshot):
+        rect = Graphene.Rect().init(0, 0, self.get_width(), self.get_height())
+        snapshot.append_color(self.color, rect)
+
+    def do_destroy(self):
+        self.unparent()
+        return False
 

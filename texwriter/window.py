@@ -24,6 +24,7 @@ from gi.repository import GLib
 from .pdfviewer import PdfViewer
 
 import sys
+import re
 import logging
 logging.basicConfig(level=logging.NOTSET)
 logger = logging.getLogger("Texwriter")
@@ -65,7 +66,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.add_action(action)
 
         action = Gio.SimpleAction.new("synctex-fwd", None)
-        action.connect("activate", self.compile_document)
+        action.connect("activate", lambda *_: self.synctex_fwd())
         self.add_action(action)
 
         # Setting paned resize-start-child and resize-end-child True
@@ -245,7 +246,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def compile_complete(self, source, result):
         logger.info("Compile complete")
         try:
-            res = source.wait_finish(result)
+            source.wait_finish(result)
         except GLib.Error as err:
             if err.matches(Gio.io_error_quark(), GLib.IOErrorEnum.CANCELLED):
                 logging.warning("Compiling file was cancelled: %s", err.message)
@@ -254,10 +255,36 @@ class TexwriterWindow(Adw.ApplicationWindow):
         finally:
             self.compile_cancellable = None
 
-        if not source.get_successful():
+        if source.get_successful():
+            pdfpath = self.file.get_path()[:-3] + "pdf"
+            pdffile = Gio.File.new_for_path(pdfpath)
+            self.pdfview.load_file(pdffile)
+            self.synctex_fwd()
+        else:
             toast = Adw.Toast.new(f"Compilation of {self.file.get_path()} failed")
             toast.set_timeout(2)
             self.toastoverlay.add_toast(toast)
+
+    def synctex_fwd(self):
+        buffer = self.textview.get_buffer()
+        it = buffer.get_iter_at_mark(buffer.get_insert())
+        path = self.file.get_path()
+        pos = str(it.get_line()) + ":" + str(it.get_line_offset()) + ":" + path
+        cmd = ['flatpak-spawn', '--host', 'synctex', 'view', '-i', pos, '-o', path]
+        flags = Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
+        proc = Gio.Subprocess.new(cmd, flags)
+        proc.communicate_utf8_async(None, None, self.synctex_complete)
+
+    def synctex_complete(self, source, result):
+        success, stdout, stderr = source.communicate_utf8_finish(result)
+        sync = dict()
+        page = int(re.search("Page:(.*)", stdout).group(1)) - 1
+        x = float(re.search("h:(.*)", stdout).group(1))
+        y = float(re.search("v:(.*)", stdout).group(1))
+        height = float(re.search("H:(.*)", stdout).group(1))
+        width = float(re.search("W:(.*)", stdout).group(1))
+
+        self.pdfview.synctex_fwd(width, height, x, y, page)
 
     def do_close_request(self):
         logger.info(f"Window close request, force = {self.force_close}")
@@ -294,12 +321,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.close()
             case "save":
                 self.save(callback = self.close)
-
-    def compile_document(self, _action, _value):
-        pass
-
-    def syntex_fwd(self, _action, _value):
-        pass
 
     def on_buffer_modified_changed(self, *_args):
         modified = self.textview.get_buffer().get_modified()

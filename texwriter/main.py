@@ -52,6 +52,7 @@ class TexwriterApplication(Adw.Application):
         self.set_accels_for_action("win.save", ['<primary>s'])
         self.set_accels_for_action("win.save-as", ['<primary><shift>s'])
         self.set_accels_for_action("win.compile", ['F5'])
+        self.set_accels_for_action("win.synctex-fwd", ['F7'])
 
 
     def do_activate(self):
