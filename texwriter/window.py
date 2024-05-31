@@ -277,14 +277,14 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     def synctex_complete(self, source, result):
         success, stdout, stderr = source.communicate_utf8_finish(result)
-        sync = dict()
-        page = int(re.search("Page:(.*)", stdout).group(1)) - 1
-        x = float(re.search("h:(.*)", stdout).group(1))
-        y = float(re.search("v:(.*)", stdout).group(1))
-        height = float(re.search("H:(.*)", stdout).group(1))
-        width = float(re.search("W:(.*)", stdout).group(1))
-
-        self.pdfview.synctex_fwd(width, height, x, y, page)
+        record = "Page:(.*)\n.*\n.*\nh:(.*)\nv:(.*)\nW:(.*)\nH:(.*)"
+        for match in re.findall(record, stdout):
+            page = int(match[0])-1
+            x = float(match[1])
+            y = float(match[2])
+            width = float(match[3])
+            height = float(match[4])
+            self.pdfview.synctex_fwd(width, height, x, y, page)
 
     def do_close_request(self):
         logger.info(f"Window close request, force = {self.force_close}")

@@ -136,12 +136,12 @@ class SynctexRect(Gtk.Widget):
 
     def __init__(self, width, height, x,y,scale):
         super().__init__()
-        height += 15
+        height += 2
         self.color = Gdk.RGBA()
-        self.color.parse("#FFF38080")
+        self.color.parse("#FFF38060")
         self.set_halign(Gtk.Align.START)
         self.set_valign(Gtk.Align.START)
-        self.set_margin_top((y-height/2)*scale)
+        self.set_margin_top((y-height+1)*scale)
         self.set_margin_start(x*scale)
         GLib.timeout_add(700, self.do_destroy)
         self.set_size_request(width*scale, height*scale)
