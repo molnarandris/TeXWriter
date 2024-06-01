@@ -58,13 +58,16 @@ class PdfViewer(Gtk.ScrolledWindow):
         child = self.box.get_first_child()
         while child is not None:
             self.box.remove(child)
+            page = child.get_child()
+            child.set_child(None)
+            del(page.poppler_page)
             child = self.box.get_first_child()
         try:
             poppler_doc = Poppler.Document.new_from_gfile(file, None, None)
             self.file = file
             for i in range(poppler_doc.get_n_pages()):
-                page = PdfPage(poppler_doc.get_page(i), self, self.scale)
-                page.connect("synctex_back", self.on_synctex_back)
+                page = PdfPage(poppler_doc.get_page(i), self.scale)
+                page.connect("synctex-back", self.on_synctex_back)
                 overlay = Gtk.Overlay()
                 overlay.set_child(page)
                 self.box.append(overlay)
@@ -130,6 +133,7 @@ class PdfViewer(Gtk.ScrolledWindow):
         vadj = viewport.get_vadjustment()
         vadj.set_value(p.y-vadj.get_page_size()*0.302)
 
+
 class PdfPage(Gtk.Widget):
     __gtype_name__ = 'PdfPage'
 
@@ -137,7 +141,7 @@ class PdfPage(Gtk.Widget):
         'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (float, float)),
     }
 
-    def __init__(self, poppler_page, viewer, scale=1.0):
+    def __init__(self, poppler_page, scale=1.0):
         super().__init__()
         self.set_halign(Gtk.Align.FILL)
         self.set_valign(Gtk.Align.CENTER)
@@ -149,7 +153,6 @@ class PdfPage(Gtk.Widget):
         controller.set_propagation_phase(Gtk.PropagationPhase.BUBBLE)
         controller.connect("released", self.on_click)
         self.add_controller(controller)
-        self.viewer = viewer
 
     @property
     def page_number(self):
