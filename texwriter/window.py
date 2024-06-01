@@ -22,6 +22,7 @@ from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GLib
 from .pdfviewer import PdfViewer
+from .logviewer import LogViewer
 
 import sys
 import re
@@ -37,6 +38,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
     textview = Gtk.Template.Child()
     toastoverlay = Gtk.Template.Child()
     pdfview = Gtk.Template.Child()
+    logview = Gtk.Template.Child()
+    result_stack = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -87,7 +90,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
         # Ongoing operation = cancellable is not None
         self.save_cancellable = None
         self.compile_cancellable = None
-        self.pdfview.connect("synctex-back", self.on_synctex_back)
+        self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(line))
+        self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
 
     def open_document(self, _action, _value):
 
@@ -262,11 +266,16 @@ class TexwriterWindow(Adw.ApplicationWindow):
             pdfpath = self.file.get_path()[:-3] + "pdf"
             pdffile = Gio.File.new_for_path(pdfpath)
             self.pdfview.load_file(pdffile)
+            self.result_stack.set_visible_child_name("pdf")
             self.synctex_fwd()
         else:
             toast = Adw.Toast.new(f"Compilation of {self.file.get_path()} failed")
             toast.set_timeout(2)
             self.toastoverlay.add_toast(toast)
+            path = self.file.get_path()[:-3] + "log"
+            logfile = Gio.File.new_for_path(path)
+            self.logview.load_file(logfile)
+            self.result_stack.set_visible_child_name("log")
 
     def synctex_fwd(self):
         buffer = self.textview.get_buffer()
@@ -289,7 +298,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             height = float(match[4])
             self.pdfview.synctex_fwd(width, height, x, y, page)
 
-    def on_synctex_back(self, pdfview, line):
+    def scroll_to(self, line, offset=0):
         buffer = self.textview.get_buffer()
         _, it = buffer.get_iter_at_line(line)
         self.textview.scroll_to_iter(it, 0.3, False, 0, 0)

@@ -44,7 +44,25 @@
                   </object>
                 </child>
                 <child>
-                  <object class="PdfViewer" id="pdfview">
+                  <object class="GtkStack" id="result_stack">
+                    <child>
+                      <object class="GtkStackPage">
+                        <property name="name">pdf</property>
+                        <property name="child">
+                          <object class="PdfViewer" id="pdfview">
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkStackPage">
+                        <property name="name">log</property>
+                        <property name="child">
+                          <object class="LogViewer" id="logview">
+                          </object>
+                        </property>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>

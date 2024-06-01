@@ -31,6 +31,7 @@ texwriter_sources = [
   'main.py',
   'window.py',
   'pdfviewer.py',
+  'logviewer.py',
 ]
 
 install_data(texwriter_sources, install_dir: moduledir)
