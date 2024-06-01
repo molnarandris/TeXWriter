@@ -17,6 +17,7 @@ class PdfViewer(Gtk.ScrolledWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.box = Gtk.Box()
+        self.box.set_halign(Gtk.Align.CENTER)
         self.box.set_orientation(Gtk.Orientation.VERTICAL)
         self.box.set_spacing(20)
         self.box.set_margin_start(20)
