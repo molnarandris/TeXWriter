@@ -42,6 +42,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         super().__init__(**kwargs)
 
         # Save and restore window geometry
+        # File loading is in main.py and saving is in do_close_request.
         settings = Gio.Settings.new("com.github.molnarandris.texwriter")
         settings.bind("width", self, "default-width", Gio.SettingsBindFlags.DEFAULT)
         settings.bind("height", self, "default-height", Gio.SettingsBindFlags.DEFAULT)
@@ -307,6 +308,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
             dialog.present(self)
             return True
         else:
+            settings = Gio.Settings.new("com.github.molnarandris.texwriter")
+            settings.set_string("file", self.file.get_path())
             return False
 
     def close_request_complete(self, dialog, response):

@@ -64,6 +64,10 @@ class TexwriterApplication(Adw.Application):
         win = self.props.active_window
         if not win:
             win = TexwriterWindow(application=self)
+            settings = Gio.Settings.new("com.github.molnarandris.texwriter")
+            path = settings.get_string("file")
+            file = Gio.File.new_for_path(path)
+            win.load_file(file)
         win.present()
 
     def do_open(self, files, _n_files, _hint):
