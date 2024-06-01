@@ -1,9 +1,11 @@
 import gi
+import re
 import logging
 from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GLib
+from gi.repository import Gio
 from gi.repository import Graphene
 gi.require_version('Poppler', '0.18')
 from gi.repository import Poppler
@@ -13,6 +15,11 @@ logger = logging.getLogger("Texwriter")
 
 class PdfViewer(Gtk.ScrolledWindow):
     __gtype_name__ = 'PdfViewer'
+
+    __gsignals__ = {
+        'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (int,)),
+    }
+
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -27,6 +34,8 @@ class PdfViewer(Gtk.ScrolledWindow):
         self.set_child(self.box)
 
         self._scale = 1
+        self.file = None
+        self.cancellable = None
 
         controller = Gtk.EventControllerScroll()
         controller.connect("scroll", self.on_scroll)
@@ -47,13 +56,15 @@ class PdfViewer(Gtk.ScrolledWindow):
 
     def load_file(self, file):
         child = self.box.get_first_child()
-        while child:
+        while child is not None:
             self.box.remove(child)
             child = self.box.get_first_child()
         try:
             poppler_doc = Poppler.Document.new_from_gfile(file, None, None)
+            self.file = file
             for i in range(poppler_doc.get_n_pages()):
-                page = PdfPage(poppler_doc.get_page(i), self.scale)
+                page = PdfPage(poppler_doc.get_page(i), self, self.scale)
+                page.connect("synctex_back", self.on_synctex_back)
                 overlay = Gtk.Overlay()
                 overlay.set_child(page)
                 self.box.append(overlay)
@@ -82,6 +93,28 @@ class PdfViewer(Gtk.ScrolledWindow):
         overlay.add_overlay(rect)
         self.scroll_to(page,y)
 
+    def on_synctex_back(self, page, x, y):
+        if self.file is None: return
+        arg = str(page.page_number) + ":" + str(x) + ":" + str(y)
+        arg += ":" + self.file.get_path()
+        cmd = ['flatpak-spawn', '--host', 'synctex', 'edit', '-o', arg]
+        flags = Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
+        proc = Gio.Subprocess.new(cmd, flags)
+        if self.cancellable: self.cancellable.cancel()
+        self.cancellable = Gio.Cancellable()
+        proc.communicate_utf8_async(None, None, self.synctex_back_complete)
+
+    def synctex_back_complete(self, source, result):
+        logger.info("Synctex back complete")
+        success, stdout, _ = source.communicate_utf8_finish(result)
+        self.cancellable = None
+        if stdout is not None:
+            result = re.search("Line:(.*)", stdout)
+            line = int(result.group(1)) - 1
+            self.emit("synctex-back", line)
+        else:
+            logger.warning("Synctex back failed")
+
     def get_page(self, n):
         child = self.box.get_first_child()
         for i in range(n):
@@ -100,7 +133,11 @@ class PdfViewer(Gtk.ScrolledWindow):
 class PdfPage(Gtk.Widget):
     __gtype_name__ = 'PdfPage'
 
-    def __init__(self, poppler_page, scale=1.0):
+    __gsignals__ = {
+        'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (float, float)),
+    }
+
+    def __init__(self, poppler_page, viewer, scale=1.0):
         super().__init__()
         self.set_halign(Gtk.Align.FILL)
         self.set_valign(Gtk.Align.CENTER)
@@ -108,22 +145,19 @@ class PdfPage(Gtk.Widget):
         self.bg_color = Gdk.RGBA()
         self.bg_color.parse("white")
         self.set_scale(scale)
+        controller = Gtk.GestureClick()
+        controller.set_propagation_phase(Gtk.PropagationPhase.BUBBLE)
+        controller.connect("released", self.on_click)
+        self.add_controller(controller)
+        self.viewer = viewer
 
-    """"
-    def do_measure(self, orientation, for_size):
-        Implementation of the measure vfunc for gtk widget.
-        I did not overwrite the get_request_mode vfunc, so this widget is
-        constant size: for_size = -1 in all calls of this function.
+    @property
+    def page_number(self):
+        return self.poppler_page.get_index()+1
 
-        The widget should be a scaling of the poppler page.
-
-        width, height = self.poppler_page.get_size()
-        if orientation == Gtk.Orientation.HORIZONTAL:
-            size = width * self.scale
-        else:
-            size = height * self.scale
-        return (size, size, -1, -1)
-    """
+    def on_click(self, controller, n_press, x, y):
+        if n_press == 2:
+            self.emit("synctex-back", x/self.scale, y/self.scale)
 
     def set_scale(self, scale):
         width, height = self.poppler_page.get_size()

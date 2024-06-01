@@ -87,6 +87,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         # Ongoing operation = cancellable is not None
         self.save_cancellable = None
         self.compile_cancellable = None
+        self.pdfview.connect("synctex-back", self.on_synctex_back)
 
     def open_document(self, _action, _value):
 
@@ -288,6 +289,13 @@ class TexwriterWindow(Adw.ApplicationWindow):
             height = float(match[4])
             self.pdfview.synctex_fwd(width, height, x, y, page)
 
+    def on_synctex_back(self, pdfview, line):
+        buffer = self.textview.get_buffer()
+        _, it = buffer.get_iter_at_line(line)
+        self.textview.scroll_to_iter(it, 0.3, False, 0, 0)
+        buffer.place_cursor(it)
+        self.textview.grab_focus()
+
     def do_close_request(self):
         logger.info(f"Window close request, force = {self.force_close}")
         if self.textview.get_buffer().get_modified() and not self.force_close:
@@ -324,7 +332,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.force_close = True
                 self.close()
             case "save":
-                self.save(callback = self.close)
+                self.save(callback=self.close)
 
     def on_buffer_modified_changed(self, *_args):
         modified = self.textview.get_buffer().get_modified()
