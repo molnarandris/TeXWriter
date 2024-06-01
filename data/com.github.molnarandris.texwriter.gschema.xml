@@ -21,6 +21,11 @@
       <summary>Pane position</summary>
       <description>The position of the division</description>
     </key>
+    <key name="pdf-scale" type="d">
+      <default>1.0</default>
+      <summary>PDF scale</summary>
+      <description>The scaling of the PDF document</description>
+    </key>
     <key name="file" type="s">
       <default>""</default>
       <summary>Opened file</summary>

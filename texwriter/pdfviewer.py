@@ -1,5 +1,6 @@
 import gi
 import logging
+from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GLib
@@ -24,13 +25,24 @@ class PdfViewer(Gtk.ScrolledWindow):
         self.box.set_margin_bottom(10)
         self.set_child(self.box)
 
-        self.scale = 1
+        self._scale = 1
 
         controller = Gtk.EventControllerScroll()
         controller.connect("scroll", self.on_scroll)
         controller.set_propagation_phase(Gtk.PropagationPhase.BUBBLE)
         controller.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)
         self.box.add_controller(controller)
+
+    @GObject.Property(type=float)
+    def scale(self):
+        "Scaling of the PDF"
+        return self._scale
+
+    @scale.setter
+    def scale(self, value):
+        self._scale = value
+        for child in self.box:
+            child.get_child().set_scale(value)
 
     def load_file(self, file):
         child = self.box.get_first_child()
@@ -40,7 +52,7 @@ class PdfViewer(Gtk.ScrolledWindow):
         try:
             poppler_doc = Poppler.Document.new_from_gfile(file, None, None)
             for i in range(poppler_doc.get_n_pages()):
-                page = PdfPage(poppler_doc.get_page(i))
+                page = PdfPage(poppler_doc.get_page(i), self.scale)
                 overlay = Gtk.Overlay()
                 overlay.set_child(page)
                 self.box.append(overlay)
@@ -56,13 +68,11 @@ class PdfViewer(Gtk.ScrolledWindow):
         h = hadj.get_value()
         v = vadj.get_value()
         scaling = 1.02 if dy > 0 else 1.0/1.02
-        self.scale *= scaling
         hadj.set_upper(hadj.get_upper()*scaling)
         vadj.set_upper(vadj.get_upper()*scaling)
         hadj.set_value(h*scaling)
         vadj.set_value(v*scaling)
-        for child in self.box:
-            child.get_child().set_scale(self.scale)
+        self.scale *= scaling
         return Gdk.EVENT_STOP
 
     def synctex_fwd(self, width, height, x, y, page):
@@ -89,15 +99,14 @@ class PdfViewer(Gtk.ScrolledWindow):
 class PdfPage(Gtk.Widget):
     __gtype_name__ = 'PdfPage'
 
-    def __init__(self, poppler_page):
+    def __init__(self, poppler_page, scale=1.0):
         super().__init__()
         self.set_halign(Gtk.Align.FILL)
         self.set_valign(Gtk.Align.CENTER)
         self.poppler_page = poppler_page
-        self.scale = 1
         self.bg_color = Gdk.RGBA()
         self.bg_color.parse("white")
-        self.set_size_request(*poppler_page.get_size())
+        self.set_scale(scale)
 
     """"
     def do_measure(self, orientation, for_size):

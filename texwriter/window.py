@@ -48,6 +48,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         settings.bind("height", self, "default-height", Gio.SettingsBindFlags.DEFAULT)
         settings.bind("maximized", self, "maximized", Gio.SettingsBindFlags.DEFAULT)
         settings.bind("paned-position", self.paned, "position", Gio.SettingsBindFlags.DEFAULT)
+        settings.bind("pdf-scale", self.pdfview, "scale", Gio.SettingsBindFlags.DEFAULT)
 
         # Set up window actions
         action = Gio.SimpleAction.new("open", None)
