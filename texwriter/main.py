@@ -38,6 +38,10 @@ class TexwriterApplication(Adw.Application):
         action.connect("activate", self.on_quit)
         self.add_action(action)
 
+        action = Gio.SimpleAction.new('new', None)
+        action.connect("activate", self.on_new)
+        self.add_action(action)
+
         action = Gio.SimpleAction.new('about', None)
         action.connect("activate", self.on_about_action)
         self.add_action(action)
@@ -114,6 +118,9 @@ class TexwriterApplication(Adw.Application):
         if quit:
             self.quit()
 
+    def on_new(self, _action, _param):
+        win = TexwriterWindow(application=self)
+        win.present()
 
 def main(version):
     """The application's entry point."""

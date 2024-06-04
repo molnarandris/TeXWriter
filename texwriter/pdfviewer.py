@@ -59,8 +59,11 @@ class PdfViewer(Gtk.ScrolledWindow):
         while child is not None:
             self.box.remove(child)
             page = child.get_child()
-            child.set_child(None)
+            page.unparent()
             del(page.poppler_page)
+            del(page)
+            child.set_child(None)
+            del(child)
             child = self.box.get_first_child()
         try:
             poppler_doc = Poppler.Document.new_from_gfile(file, None, None)
@@ -71,6 +74,7 @@ class PdfViewer(Gtk.ScrolledWindow):
                 overlay = Gtk.Overlay()
                 overlay.set_child(page)
                 self.box.append(overlay)
+            del(poppler_doc)
         except:
             logger.warning(f"Opening the following pdf failed: {file.get_path()}")
 
@@ -170,6 +174,7 @@ class PdfPage(Gtk.Widget):
     def do_snapshot(self, snapshot):
         """ This virtual function manages the display of the widget.
         """
+        print(f"{self.page_number} is creating snapshot")
         pw, ph = self.poppler_page.get_size()
         rect = Graphene.Rect().init(0, 0, self.scale*pw, self.scale*ph)
         snapshot.append_color(self.bg_color, rect)
