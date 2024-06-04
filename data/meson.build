@@ -33,4 +33,12 @@ test('Validate schema file',
      compile_schemas,
      args: ['--strict', '--dry-run', meson.current_source_dir()])
 
+pkgdatadir = get_option('prefix') / get_option('datadir') / meson.project_name()
+gnome.compile_resources('texwriter',
+  'texwriter.gresource.xml',
+  gresource_bundle: true,
+  install: true,
+  install_dir: pkgdatadir,
+)
+
 subdir('icons')

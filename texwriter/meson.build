@@ -2,13 +2,6 @@ pkgdatadir = get_option('prefix') / get_option('datadir') / meson.project_name()
 moduledir = pkgdatadir / 'texwriter'
 gnome = import('gnome')
 
-gnome.compile_resources('texwriter',
-  'texwriter.gresource.xml',
-  gresource_bundle: true,
-  install: true,
-  install_dir: pkgdatadir,
-)
-
 python = import('python')
 
 conf = configuration_data()
