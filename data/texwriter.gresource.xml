@@ -5,4 +5,10 @@
     <file preprocess="xml-stripblanks" alias="gtk/help-overlay.ui">ui/help-overlay.ui</file>
     <file compressed="true" alias="style.css">css/style.css</file>
   </gresource>
+  <gresource prefix="/com/github/molnarandris/texwriter">
+    <file preprocess="xml-stripblanks">icons/issue-symbolic.svg</file>
+  </gresource>
+  <gresource prefix="/com/github/molnarandris/texwriter">
+    <file preprocess="xml-stripblanks">icons/pdf-symbolic.svg</file>
+  </gresource>
 </gresources>
