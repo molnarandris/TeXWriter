@@ -25,6 +25,12 @@
                 <property name="menu-model">primary_menu</property>
               </object>
             </child>
+            <child type="end">
+              <object class="GtkButton" id="pdf_log_switch">
+                <property name="tooltip-text" translatable="yes">View log</property>
+                <property name="icon_name">issue-symbolic</property>
+              </object>
+            </child>
           </object>
         </child>
         <property name="content">

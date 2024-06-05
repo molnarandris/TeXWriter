@@ -40,6 +40,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     pdfview = Gtk.Template.Child()
     logview = Gtk.Template.Child()
     result_stack = Gtk.Template.Child()
+    pdf_log_switch = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -92,6 +93,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.compile_cancellable = None
         self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(line))
         self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
+        self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
 
     def open_document(self, _action, _value):
 
@@ -351,3 +353,16 @@ class TexwriterWindow(Adw.ApplicationWindow):
         else:
             prefix = ""
         self.set_title(prefix + self.title)
+
+    def pdf_log_switch_cb(self, button):
+        match self.result_stack.get_visible_child_name():
+            case "pdf":
+                self.result_stack.set_visible_child_name("log")
+                button.set_icon_name("pdf-symbolic")
+                button.set_tooltip_text("View PDF")
+            case "log":
+                self.result_stack.set_visible_child_name("pdf")
+                button.set_icon_name("issue-symbolic")
+                button.set_tooltip_text("View log")
+            case _:
+                logger.warning("Pdf log switch button clicked while stack is not visible")
