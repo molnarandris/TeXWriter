@@ -153,9 +153,18 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.title = display_name
         self.set_title(display_name)
         self.file = file
-        pdfpath = file.get_path()[:-3] + "pdf"
+        self.load_pdf()
+        self.load_log()
+
+    def load_pdf(self):
+        pdfpath = self.file.get_path()[:-3] + "pdf"
         pdffile = Gio.File.new_for_path(pdfpath)
         self.pdfview.load_file(pdffile)
+
+    def load_log(self):
+        logpath = self.file.get_path()[:-3] + "log"
+        logfile = Gio.File.new_for_path(logpath)
+        self.logview.load_file(logfile)
 
     def save(self, callback=None):
         logger.info("Save function called")
@@ -264,19 +273,15 @@ class TexwriterWindow(Adw.ApplicationWindow):
         finally:
             self.compile_cancellable = None
 
+        self.load_log()
         if source.get_successful():
-            pdfpath = self.file.get_path()[:-3] + "pdf"
-            pdffile = Gio.File.new_for_path(pdfpath)
-            self.pdfview.load_file(pdffile)
+            self.load_pdf()
             self.result_stack.set_visible_child_name("pdf")
             self.synctex_fwd()
         else:
             toast = Adw.Toast.new(f"Compilation of {self.file.get_path()} failed")
             toast.set_timeout(2)
             self.toastoverlay.add_toast(toast)
-            path = self.file.get_path()[:-3] + "log"
-            logfile = Gio.File.new_for_path(path)
-            self.logview.load_file(logfile)
             self.result_stack.set_visible_child_name("log")
 
     def synctex_fwd(self):
