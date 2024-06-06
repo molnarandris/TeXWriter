@@ -21,8 +21,10 @@ from gi.repository import Adw
 from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import GLib
+from gi.repository import Gdk
 from .pdfviewer import PdfViewer
 from .logviewer import LogViewer
+from .autocomplete import AutocompletePopover
 
 import sys
 import re
@@ -94,6 +96,11 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(line))
         self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
         self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
+
+        # Here I should subclass textview/sourceview....
+        self.popover = AutocompletePopover(self.textview)
+        self.popover.connect("update-position", self.update_popover_position)
+
 
     def open_document(self, _action, _value):
 
@@ -371,3 +378,14 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 button.set_tooltip_text("View log")
             case _:
                 logger.warning("Pdf log switch button clicked while stack is not visible")
+
+    def update_popover_position(self, popover):
+        buffer = self.textview.get_buffer()
+        it = buffer.get_iter_at_mark(buffer.get_insert())
+        buf_rect = self.textview.get_iter_location(it)
+        rect = Gdk.Rectangle()
+        x, y = self.textview.buffer_to_window_coords(Gtk.TextWindowType.TEXT, buf_rect.x,buf_rect.y)
+        rect.x, rect.y = self.textview.translate_coordinates(self.textview, x,y)
+        rect.width = buf_rect.width
+        rect.height = buf_rect.height
+        popover.set_pointing_to(rect)

@@ -25,6 +25,7 @@ texwriter_sources = [
   'window.py',
   'pdfviewer.py',
   'logviewer.py',
+  'autocomplete.py',
 ]
 
 install_data(texwriter_sources, install_dir: moduledir)
