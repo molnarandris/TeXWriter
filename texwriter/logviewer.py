@@ -53,19 +53,16 @@ class LogViewer(Gtk.ListBox):
             title = match.group(1)
             line = int(match.group(2))
             self.add_row(title, line)
-            print("Badbox\n----------------------\n", match.group(0))
 
         for match in re.finditer(warning_re, text):
             title = "Undefined " + match.group(1).lower() + ": " + match.group(2)
             line = int(match.group(3))
             self.add_row(title, line)
-            print("Warning\n----------------------\n", match.group(0))
 
         for match in re.finditer(error_re, text):
             title = match.group(1) + ": " + match.group(3)
             line = int(match.group(2))
             self.add_row(title, line)
-            print("Error\n----------------------\n", match.group(0))
 
 
     def add_row(self, title, line):

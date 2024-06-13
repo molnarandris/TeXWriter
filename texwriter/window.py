@@ -245,7 +245,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
             callback()
 
     def compile(self):
-        logger.info("Compile called")
         if self.compile_cancellable: self.compile_cancellable.cancel()
         self.cancellable = None
 
@@ -266,7 +265,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
                             callback=self.compile_complete)
 
     def compile_complete(self, source, result):
-        logger.info("Compile complete")
         try:
             source.wait_finish(result)
         except GLib.Error as err:
@@ -317,7 +315,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.textview.grab_focus()
 
     def do_close_request(self):
-        logger.info(f"Window close request, force = {self.force_close}")
         if self.textview.get_buffer().get_modified() and not self.force_close:
             dialog = Adw.AlertDialog.new(_("Save Changes?"),
                                          _("“%s” contains unsaved changes. " +
@@ -356,7 +353,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     def on_buffer_modified_changed(self, *_args):
         modified = self.textview.get_buffer().get_modified()
-        logger.info(f"Modified callback, {modified}")
         if modified:
             prefix = "• "
         else:

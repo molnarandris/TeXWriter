@@ -174,7 +174,6 @@ class PdfPage(Gtk.Widget):
     def do_snapshot(self, snapshot):
         """ This virtual function manages the display of the widget.
         """
-        print(f"{self.page_number} is creating snapshot")
         pw, ph = self.poppler_page.get_size()
         rect = Graphene.Rect().init(0, 0, self.scale*pw, self.scale*ph)
         snapshot.append_color(self.bg_color, rect)
