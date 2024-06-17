@@ -1,5 +1,6 @@
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import Gio
 from gi.repository import GObject
 
 class AutocompletePopover(Gtk.Popover):
@@ -25,15 +26,15 @@ class AutocompletePopover(Gtk.Popover):
         controller.connect("released", self.button_release_cb)
         parent.get_root().add_controller(controller)
 
-        # This is an example to fill up the rows in the popover
-        row = Gtk.ListBoxRow()
-        row.text = "\\alpha"
-        row.set_child(Gtk.Label.new(row.text))
-        self.listbox.append(row)
-        row = Gtk.ListBoxRow()
-        row.text = "\\beta"
-        row.set_child(Gtk.Label.new(row.text))
-        self.listbox.append(row)
+        file = Gio.File.new_for_uri("resource:///com/github/molnarandris/texwriter/completion/completion.txt")
+        contents = file.load_contents()
+        text = contents[1].decode('utf-8')
+        for line in text.splitlines():
+            row = Gtk.ListBoxRow()
+            row.set_halign(Gtk.Align.START)
+            row.text = line
+            row.set_child(Gtk.Label.new(row.text))
+            self.listbox.append(row)
         self.selected_row = None
 
     def key_press_cb(self, controller, keyval, keycode, state):

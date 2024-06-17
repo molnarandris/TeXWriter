@@ -11,4 +11,7 @@
   <gresource prefix="/com/github/molnarandris/texwriter">
     <file preprocess="xml-stripblanks">icons/pdf-symbolic.svg</file>
   </gresource>
+  <gresource prefix="/com/github/molnarandris/texwriter">
+    <file>completion/completion.txt</file>
+  </gresource>
 </gresources>
