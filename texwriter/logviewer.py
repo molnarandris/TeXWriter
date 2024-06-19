@@ -23,6 +23,7 @@ class LogViewer(Gtk.ListBox):
 
     def load_file(self, file=None):
         """Open File from command line or open / open recent etc."""
+        self.remove_all()
         logger.info("Opening %s", file.get_uri())
         file.load_contents_async(None, self.load_file_complete)
 
