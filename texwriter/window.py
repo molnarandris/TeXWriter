@@ -115,7 +115,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.get_application().open([file], "")
         except GLib.Error as err:
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
-                logger.info("File selection was dismissed: %s", err.message)
                 return
             else:
                 # FIXME: which file? Why?
@@ -123,8 +122,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     def load_file(self, file=None):
         """Open File from command line or open / open recent etc."""
-        logger.info("Opening %s", file.get_uri())
-
         file.load_contents_async(None, self.load_file_complete)
 
     def load_file_complete(self, file, result):
@@ -140,14 +137,12 @@ class TexwriterWindow(Adw.ApplicationWindow):
             toast = Adw.Toast.new("Unable to load file")
             toast.set_timeout(2)
             self.toastoverlay.add_toast(toast)
-            logger.warning(f"Unable to open {path}: {contents[1]}")
             return
         try:
             text = contents[1].decode('utf-8')
         except UnicodeError as err:
             path = file.peek_path()
             self.notify("The file is not UTF-8 encoded")
-            logger.warning(f"Unable to load the contents of {path}: the file is not encoded with UTF-8")
             return
 
         buffer = self.textview.get_buffer()
@@ -171,28 +166,23 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.logview.load_file(logfile)
 
     def save(self, callback=None):
-        logger.info("Save function called")
         if self.file:
             self.save_file(self.file, callback)
             return
         self.save_as(callback)
 
     def save_as(self, callback=None):
-        logger.info("Save_as function called")
         native = Gtk.FileDialog()
         native.save(self, None, self.on_save_response, callback)
 
     def on_save_response(self, dialog, result, callback):
-        logger.info("Save response function called")
         try:
             file = dialog.save_finish(result)
         except GLib.Error as err:
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
-                logger.info("File save selection was dismissed: %s", err.message)
                 return
             else:
                 self.notify("Unable to save file")
-                logger.warning(f"Unable to save file: {err}")
 
         if file is not None:
             self.save_file(file, callback)
@@ -233,7 +223,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.set_title(display_name)
         except:
             self.notify(f"Unable to save {display_name}")
-            logger.warning(f"Unable to save {display_name}")
 
         self.save_cancellable = None
         if callback:
@@ -264,7 +253,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             source.wait_finish(result)
         except GLib.Error as err:
             if err.matches(Gio.io_error_quark(), GLib.IOErrorEnum.CANCELLED):
-                logging.warning("Compiling file was cancelled: %s", err.message)
+                pass
             else:
                 raise
         finally:
