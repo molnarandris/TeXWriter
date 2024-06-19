@@ -58,7 +58,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
         # Set up window actions
         action = Gio.SimpleAction.new("open", None)
-        action.connect("activate", self.open_document)
+        action.connect("activate", lambda *_: self.open())
         self.add_action(action)
 
         action = Gio.SimpleAction.new("save", None)
@@ -99,20 +99,22 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
         self.popover = AutocompletePopover(self.textview)
 
-    def open_document(self, _action, _value):
-
-        dialog = Gtk.FileDialog()
-        dialog.open(self, None, self.open_document_complete)
-
     def notify(self, str):
         toast = Adw.Toast.new(str)
         toast.set_timeout(2)
         self.toastoverlay.add_toast(toast)
 
-    def open_document_complete(self, dialog, response):
+    def open(self, file=None):
+        if file is None:
+            dialog = Gtk.FileDialog()
+            dialog.open(self, None, self.open_dialog_complete)
+        else:
+            file.load_contents_async(None, self.open_complete)
+
+    def open_dialog_complete(self, dialog, response):
         try:
             file = dialog.open_finish(response)
-            self.get_application().open([file], "")
+            self.open(file)
         except GLib.Error as err:
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
                 return
@@ -120,26 +122,19 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 # FIXME: which file? Why?
                 self.notify("Unable to open file")
 
-    def load_file(self, file=None):
-        """Open File from command line or open / open recent etc."""
-        file.load_contents_async(None, self.load_file_complete)
-
-    def load_file_complete(self, file, result):
+    def open_complete(self, file, result):
         info = file.query_info("standard::display-name", Gio.FileQueryInfoFlags.NONE)
         if info:
             display_name = info.get_attribute_string("standard::display-name")
         else:
             display_name = file.get_basename()
 
-        contents = file.load_contents_finish(result)
-        if not contents[0]:
-            path = file.peek_path()
-            toast = Adw.Toast.new("Unable to load file")
-            toast.set_timeout(2)
-            self.toastoverlay.add_toast(toast)
+        success, contents, _ = file.load_contents_finish(result)
+        if not success:
+            self.notify(f"Unable to load {display_name}")
             return
         try:
-            text = contents[1].decode('utf-8')
+            text = contents.decode('utf-8')
         except UnicodeError as err:
             path = file.peek_path()
             self.notify("The file is not UTF-8 encoded")

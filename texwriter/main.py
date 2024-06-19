@@ -71,7 +71,7 @@ class TexwriterApplication(Adw.Application):
             settings = Gio.Settings.new("com.github.molnarandris.texwriter")
             path = settings.get_string("file")
             file = Gio.File.new_for_path(path)
-            win.load_file(file)
+            win.open(file)
         win.present()
 
     def do_open(self, files, _n_files, _hint):
@@ -89,7 +89,7 @@ class TexwriterApplication(Adw.Application):
             else:
                 win = TexwriterWindow(application=self)
 
-            win.load_file(file)
+            win.open(file)
             win.present()
 
     def on_about_action(self, widget, _):
