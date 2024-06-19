@@ -104,6 +104,11 @@ class TexwriterWindow(Adw.ApplicationWindow):
         dialog = Gtk.FileDialog()
         dialog.open(self, None, self.open_document_complete)
 
+    def notify(self, str):
+        toast = Adw.Toast.new(str)
+        toast.set_timeout(2)
+        self.toastoverlay.add_toast(toast)
+
     def open_document_complete(self, dialog, response):
         try:
             file = dialog.open_finish(response)
@@ -114,10 +119,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 return
             else:
                 # FIXME: which file? Why?
-                toast = Adw.Toast.new("Unable to open file")
-                toast.set_timeout(2)
-                self.toastoverlay.add_toast(toast)
-                logger.warning(f"Unable to open file")
+                self.notify("Unable to open file")
 
     def load_file(self, file=None):
         """Open File from command line or open / open recent etc."""
@@ -144,9 +146,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             text = contents[1].decode('utf-8')
         except UnicodeError as err:
             path = file.peek_path()
-            toast = Adw.Toast.new("The file is not UTF-8 encoded")
-            toast.set_timeout(2)
-            self.toastoverlay.add_toast(toast)
+            self.notify("The file is not UTF-8 encoded")
             logger.warning(f"Unable to load the contents of {path}: the file is not encoded with UTF-8")
             return
 
@@ -191,9 +191,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 logger.info("File save selection was dismissed: %s", err.message)
                 return
             else:
-                toast = Adw.Toast.new("Unable to save file")
-                toast.set_timeout(2)
-                self.toastoverlay.add_toast(toast)
+                self.notify("Unable to save file")
                 logger.warning(f"Unable to save file: {err}")
 
         if file is not None:
@@ -234,10 +232,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.title = display_name
             self.set_title(display_name)
         except:
-
-            toast = Adw.Toast.new(f"Unable to save {display_name}")
-            toast.set_timeout(2)
-            self.toastoverlay.add_toast(toast)
+            self.notify(f"Unable to save {display_name}")
             logger.warning(f"Unable to save {display_name}")
 
         self.save_cancellable = None
@@ -281,9 +276,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.result_stack.set_visible_child_name("pdf")
             self.synctex_fwd()
         else:
-            toast = Adw.Toast.new(f"Compilation of {self.file.get_path()} failed")
-            toast.set_timeout(2)
-            self.toastoverlay.add_toast(toast)
+            self.notify(f"Compilation of {self.file.get_path()} failed")
             self.result_stack.set_visible_child_name("log")
 
     def synctex_fwd(self):
