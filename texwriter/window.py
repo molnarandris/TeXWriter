@@ -123,12 +123,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.notify("Unable to open file")
 
     def open_complete(self, file, result):
-        info = file.query_info("standard::display-name", Gio.FileQueryInfoFlags.NONE)
-        if info:
-            display_name = info.get_attribute_string("standard::display-name")
-        else:
-            display_name = file.get_basename()
-
+        display_name = get_display_name(file)
         success, contents, _ = file.load_contents_finish(result)
         if not success:
             self.notify(f"Unable to load {display_name}")
@@ -137,7 +132,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             text = contents.decode('utf-8')
         except UnicodeError as err:
             path = file.peek_path()
-            self.notify("The file is not UTF-8 encoded")
+            self.notify(f"The file {display_name} is not UTF-8 encoded")
             return
 
         buffer = self.textview.get_buffer()
@@ -202,14 +197,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
                                           user_data=callback)
 
     def save_file_complete(self, file, result, callback):
-
-        info = file.query_info("standard::display-name",
-                               Gio.FileQueryInfoFlags.NONE)
-        if info:
-            display_name = info.get_attribute_string("standard::display-name")
-        else:
-            display_name = file.get_basename()
-
+        display_name = get_display_name(file)
         try:
             file.replace_contents_finish(result)
             self.textview.get_buffer().set_modified(False)
@@ -260,7 +248,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.result_stack.set_visible_child_name("pdf")
             self.synctex_fwd()
         else:
-            self.notify(f"Compilation of {self.file.get_path()} failed")
+            display_name = get_display_name(self.file)
+            self.notify(f"Compilation of {display_name} failed")
             self.result_stack.set_visible_child_name("log")
 
     def synctex_fwd(self):
@@ -348,4 +337,13 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 button.set_tooltip_text("View log")
             case _:
                 logger.warning("Pdf log switch button clicked while stack is not visible")
+
+def get_display_name(file):
+    info = file.query_info("standard::display-name",
+                           Gio.FileQueryInfoFlags.NONE)
+    if info:
+        display_name = info.get_attribute_string("standard::display-name")
+    else:
+        display_name = file.get_basename()
+    return display_name
 
