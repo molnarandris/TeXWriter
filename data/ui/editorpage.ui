@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <template class="EditorPage" parent="GtkScrolledWindow">
+    <child>
+      <object class="GtkTextView" id="textview">
+        <property name="width-request">200</property>
+        <property name="left-margin">20</property>
+        <property name="right-margin">20</property>
+        <property name="top-margin">5</property>
+        <property name="bottom-margin">5</property>
+        <property name="wrap-mode">word-char</property>
+        <style>
+          <class name="texwriter-editor"/>
+        </style>
+      </object>
+    </child>
+  </template>
+</interface>

@@ -24,7 +24,7 @@ from gi.repository import GLib
 from gi.repository import Gdk
 from .pdfviewer import PdfViewer
 from .logviewer import LogViewer
-from .autocomplete import AutocompletePopover
+from .editorpage import EditorPage
 
 import sys
 import re
@@ -37,7 +37,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'TexwriterWindow'
 
     paned = Gtk.Template.Child()
-    textview = Gtk.Template.Child()
+    editorpage = Gtk.Template.Child()
     toastoverlay = Gtk.Template.Child()
     pdfview = Gtk.Template.Child()
     logview = Gtk.Template.Child()
@@ -84,9 +84,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.paned.set_resize_end_child(True)
 
         # TODO: override textbuffer's do_modified_changed.
-        self.textview.get_buffer().connect("modified-changed", self.on_buffer_modified_changed)
-        self.title = "New Document"
-        self.file = None
+        self.editorpage.bind_property("title", self, "title")
         self.force_close = False
         # Keep track whether there is an ongoing operation.
         # If yes, we have to cancel it before starting a new one.
@@ -97,8 +95,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
         self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
 
-        self.popover = AutocompletePopover(self.textview)
-
     def notify(self, str):
         toast = Adw.Toast.new(str)
         toast.set_timeout(2)
@@ -107,14 +103,14 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def open(self, file=None):
         if file is None:
             dialog = Gtk.FileDialog()
-            dialog.open(self, None, self.open_dialog_complete)
+            dialog.open(self, None, self.open_cb)
         else:
-            file.load_contents_async(None, self.open_complete)
+            self.editorpage.load_file_async(file, None, self.open_complete)
 
-    def open_dialog_complete(self, dialog, response):
+    def open_cb(self, dialog, response):
         try:
             file = dialog.open_finish(response)
-            file.load_contents_async(None, self.open_complete)
+            self.editorpage.load_file_async(file, None, self.open_complete)
         except GLib.Error as err:
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
                 return
@@ -123,49 +119,37 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.notify("Unable to open file")
 
     def open_complete(self, file, result):
-        display_name = get_display_name(file)
-        success, contents, _ = file.load_contents_finish(result)
-        if not success:
-            self.notify(f"Unable to load {display_name}")
-            return
         try:
-            text = contents.decode('utf-8')
+            self.editorpage.load_file_finish(file, result)
         except UnicodeError as err:
-            path = file.peek_path()
-            self.notify(f"The file {display_name} is not UTF-8 encoded")
-            return
+            self.notify(f"The file {self.editorpage.get_display_name()} is not UTF-8 encoded")
+        except Exception as err:
+            self.notify(err.value)
 
-        buffer = self.textview.get_buffer()
-        buffer.set_text(text)
-        buffer.set_modified(False)
-
-        self.title = display_name
-        self.set_title(display_name)
-        self.file = file
         self.load_pdf()
         self.load_log()
 
     def load_pdf(self):
-        pdfpath = self.file.get_path()[:-3] + "pdf"
+        pdfpath = self.editorpage.file.get_path()[:-3] + "pdf"
         pdffile = Gio.File.new_for_path(pdfpath)
         self.pdfview.load_file(pdffile)
 
     def load_log(self):
-        logpath = self.file.get_path()[:-3] + "log"
+        logpath = self.editorpage.file.get_path()[:-3] + "log"
         logfile = Gio.File.new_for_path(logpath)
         self.logview.load_file(logfile)
 
     def save(self, callback=None):
-        if self.file:
-            self.save_file(self.file, callback)
-            return
-        self.save_as(callback)
+        if self.editorpage.file:
+            self.editorpage.save_file_async(self.save_complete, callback)
+        else:
+            self.save_as(callback)
 
     def save_as(self, callback=None):
         native = Gtk.FileDialog()
-        native.save(self, None, self.on_save_response, callback)
+        native.save(self, None, self.save_as_cb, callback)
 
-    def on_save_response(self, dialog, result, callback):
+    def save_as_cb(self, dialog, result, callback):
         try:
             file = dialog.save_finish(result)
         except GLib.Error as err:
@@ -175,118 +159,61 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.notify("Unable to save file")
 
         if file is not None:
-            self.save_file(file, callback)
+            self.editorpage.file = file
+            self.editorpage.save_file_async(self.save_complete, callback)
 
-    def save_file(self, file, callback=None):
-        buffer = self.textview.get_buffer()
-        start = buffer.get_start_iter()
-        end = buffer.get_end_iter()
-        text = buffer.get_text(start, end, False)
-        bytes = GLib.Bytes.new(text.encode('utf-8'))
-
-        if self.save_cancellable:
-            self.save_cancellable.cancel()
-        self.save_cancellable = Gio.Cancellable()
-
-        file.replace_contents_bytes_async(contents=bytes,
-                                          etag=None,
-                                          make_backup=False,
-                                          flags=Gio.FileCreateFlags.NONE,
-                                          cancellable=self.save_cancellable,
-                                          callback=self.save_file_complete,
-                                          user_data=callback)
-
-    def save_file_complete(self, file, result, callback):
-        display_name = get_display_name(file)
+    def save_complete(self, file, result, callback):
         try:
-            file.replace_contents_finish(result)
-            self.textview.get_buffer().set_modified(False)
-            self.file = file
-            self.title = display_name
-            self.set_title(display_name)
-        except:
-            self.notify(f"Unable to save {display_name}")
-
-        self.save_cancellable = None
+            self.editorpage.save_file_finish(file, result)
+        except Exception as err:
+            self.notify(err.value)
         if callback:
             callback()
 
     def compile(self):
-        if self.compile_cancellable: self.compile_cancellable.cancel()
-        self.cancellable = None
-
+        editor = self.editorpage
         # If needs saving, save first, then compile.
-        if self.textview.get_buffer().get_modified():
+        if editor.modified:
             self.save(self.compile)
-        # Otherwise we can proceed with compiling
-        else:
-            self.cancellable = Gio.Cancellable()
-            pwd = self.file.get_parent().get_path()
-            cmd = ['flatpak-spawn', '--host', 'latexmk', '-synctex=1',
-                   '-interaction=nonstopmode', '-pdf', "-g",
-                   "--output-directory=" + pwd,
-                   self.file.get_path()]
-            flags = Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE
-            proc = Gio.Subprocess.new(cmd, flags)
-            proc.wait_async(cancellable=self.cancellable,
-                            callback=self.compile_complete)
+            return
+        editor.compile_async(self.compile_complete)
 
-    def compile_complete(self, source, result):
+    def compile_complete(self, source, result, editor):
         try:
-            source.wait_finish(result)
-        except GLib.Error as err:
-            if err.matches(Gio.io_error_quark(), GLib.IOErrorEnum.CANCELLED):
-                pass
-            else:
-                raise
-        finally:
-            self.compile_cancellable = None
-
-        self.load_log()
-        if source.get_successful():
+            editor.compile_finish(source, result)
+            self.load_log()
+        except:
+            display_name = editor.get_display_name()
+            self.notify(f"Compilation of {display_name} failed")
+            self.result_stack.set_visible_child_name("log")
+        else:
             self.load_pdf()
             self.result_stack.set_visible_child_name("pdf")
             self.synctex_fwd()
-        else:
-            display_name = get_display_name(self.file)
-            self.notify(f"Compilation of {display_name} failed")
-            self.result_stack.set_visible_child_name("log")
 
     def synctex_fwd(self):
-        buffer = self.textview.get_buffer()
-        it = buffer.get_iter_at_mark(buffer.get_insert())
-        path = self.file.get_path()
-        pos = str(it.get_line()) + ":" + str(it.get_line_offset()) + ":" + path
-        cmd = ['flatpak-spawn', '--host', 'synctex', 'view', '-i', pos, '-o', path]
-        flags = Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
-        proc = Gio.Subprocess.new(cmd, flags)
-        proc.communicate_utf8_async(None, None, self.synctex_complete)
+        self.editorpage.synctex_async(self.synctex_complete)
 
     def synctex_complete(self, source, result):
-        success, stdout, stderr = source.communicate_utf8_finish(result)
-        record = "Page:(.*)\n.*\n.*\nh:(.*)\nv:(.*)\nW:(.*)\nH:(.*)"
-        for match in re.findall(record, stdout):
-            page = int(match[0])-1
-            x = float(match[1])
-            y = float(match[2])
-            width = float(match[3])
-            height = float(match[4])
-            self.pdfview.synctex_fwd(width, height, x, y, page)
+        try:
+            result = self.editorpage.synctex_finish(source,result)
+        except:
+            self.notify("Synctex error")
+        width, height, x, y, page = result
+        self.pdfview.synctex_fwd(width, height, x, y, page)
 
     def scroll_to(self, line, offset=0):
-        buffer = self.textview.get_buffer()
-        _, it = buffer.get_iter_at_line(line)
-        self.textview.scroll_to_iter(it, 0.3, False, 0, 0)
-        buffer.place_cursor(it)
-        self.textview.grab_focus()
+        editor = self.editorpage
+        editor.scroll_to(line,offset)
 
     def do_close_request(self):
-        if self.textview.get_buffer().get_modified() and not self.force_close:
+        editor = self.editorpage
+        if editor.modified and not self.force_close:
             dialog = Adw.AlertDialog.new(_("Save Changes?"),
                                          _("“%s” contains unsaved changes. " +
                                            "If you don’t save, " +
                                            "all your changes will be " +
-                                           "permanently lost.") % self.title
+                                           "permanently lost.") % editor.get_display_name()
                                          )
             dialog.add_response("cancel", _("Cancel"))
             dialog.add_response("close", _("Discard"))
@@ -301,7 +228,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             return True
         else:
             settings = Gio.Settings.new("com.github.molnarandris.texwriter")
-            settings.set_string("file", self.file.get_path())
+            settings.set_string("file", editor.file.get_path())
             return False
 
     def close_request_complete(self, dialog, response):
@@ -317,14 +244,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
             case "save":
                 self.save(callback=self.close)
 
-    def on_buffer_modified_changed(self, *_args):
-        modified = self.textview.get_buffer().get_modified()
-        if modified:
-            prefix = "• "
-        else:
-            prefix = ""
-        self.set_title(prefix + self.title)
-
     def pdf_log_switch_cb(self, button):
         match self.result_stack.get_visible_child_name():
             case "pdf":
@@ -337,13 +256,3 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 button.set_tooltip_text("View log")
             case _:
                 logger.warning("Pdf log switch button clicked while stack is not visible")
-
-def get_display_name(file):
-    info = file.query_info("standard::display-name",
-                           Gio.FileQueryInfoFlags.NONE)
-    if info:
-        display_name = info.get_attribute_string("standard::display-name")
-    else:
-        display_name = file.get_basename()
-    return display_name
-

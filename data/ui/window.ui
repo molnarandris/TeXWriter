@@ -40,20 +40,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <child>
-                  <object class="GtkScrolledWindow">
-                    <child>
-                      <object class="GtkTextView" id="textview">
-                        <property name="width-request">200</property>
-                        <property name="left-margin">20</property>
-                        <property name="right-margin">20</property>
-                        <property name="top-margin">5</property>
-                        <property name="bottom-margin">5</property>
-                        <property name="wrap-mode">word-char</property>
-                        <style>
-                          <class name="texwriter-editor"/>
-                        </style>
-                      </object>
-                    </child>
+                  <object class="EditorPage" id="editorpage">
                   </object>
                 </child>
                 <child>
