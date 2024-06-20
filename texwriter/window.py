@@ -114,7 +114,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def open_dialog_complete(self, dialog, response):
         try:
             file = dialog.open_finish(response)
-            self.open(file)
+            file.load_contents_async(None, self.open_complete)
         except GLib.Error as err:
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
                 return
