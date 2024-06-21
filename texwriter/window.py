@@ -94,6 +94,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(line))
         self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
         self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
+        self.result_stack.connect("notify::visible-child-name", self.stack_change_cb)
 
     def notify(self, str):
         toast = Adw.Toast.new(str)
@@ -249,11 +250,16 @@ class TexwriterWindow(Adw.ApplicationWindow):
         match self.result_stack.get_visible_child_name():
             case "pdf":
                 self.result_stack.set_visible_child_name("log")
-                button.set_icon_name("pdf-symbolic")
-                button.set_tooltip_text("View PDF")
             case "log":
                 self.result_stack.set_visible_child_name("pdf")
-                button.set_icon_name("issue-symbolic")
-                button.set_tooltip_text("View log")
             case _:
                 logger.warning("Pdf log switch button clicked while stack is not visible")
+
+    def stack_change_cb(self, stack, property):
+        if stack.props.visible_child_name == "pdf":
+            self.pdf_log_switch.set_icon_name("issue-symbolic")
+            self.pdf_log_switch.set_tooltip_text("View log")
+        if stack.props.visible_child_name == "log":
+            self.pdf_log_switch.set_icon_name("pdf-symbolic")
+            self.pdf_log_switch.set_tooltip_text("View pdf")
+
