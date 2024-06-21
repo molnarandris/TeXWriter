@@ -181,7 +181,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def compile_complete(self, source, result, editor):
         try:
             editor.compile_finish(source, result)
-            self.load_log()
         except:
             display_name = editor.get_display_name()
             self.notify(f"Compilation of {display_name} failed")
@@ -190,6 +189,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.load_pdf()
             self.result_stack.set_visible_child_name("pdf")
             self.synctex_fwd()
+        finally:
+            self.load_log()
 
     def synctex_fwd(self):
         self.editorpage.synctex_async(self.synctex_complete)
