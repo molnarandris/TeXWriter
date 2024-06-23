@@ -112,14 +112,14 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def open_cb(self, dialog, response):
         try:
             file = dialog.open_finish(response)
-            self.editorpage.file = file
-            self.editorpage.load_file_async(self.open_complete)
         except GLib.Error as err:
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
                 return
             else:
-                # FIXME: which file? Why?
-                self.notify("Unable to open file")
+                self.notify(f"Unable to open file: {err.message}")
+        else:
+            self.editorpage.file = file
+            self.editorpage.load_file_async(self.open_complete)
 
     def open_complete(self, file, result):
         try:
@@ -159,9 +159,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
                 return
             else:
-                self.notify("Unable to save file")
-
-        if file is not None:
+                self.notify(f"Unable to save file: {err.message}")
+        else:
             self.editorpage.file = file
             self.editorpage.save_file_async(self.save_complete, callback)
 
