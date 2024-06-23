@@ -147,6 +147,8 @@ class EditorPage(Gtk.ScrolledWindow):
     @property
     def display_name(self, file=None):
         if file is None: file = self.file
+        if file is None:
+            return "New File"
         info = file.query_info("standard::display-name",
                                Gio.FileQueryInfoFlags.NONE)
         if info:

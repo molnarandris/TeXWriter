@@ -216,7 +216,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
             return True
         else:
             settings = Gio.Settings.new("com.github.molnarandris.texwriter")
-            settings.set_string("file", editor.file.get_path())
+            if editor.file is not None:
+                settings.set_string("file", editor.file.get_path())
+            else:
+                settings.set_string("file", "")
             return False
 
     def close_request_complete(self, dialog, response):
