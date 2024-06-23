@@ -106,12 +106,14 @@ class TexwriterWindow(Adw.ApplicationWindow):
             dialog = Gtk.FileDialog()
             dialog.open(self, None, self.open_cb)
         else:
-            self.editorpage.load_file_async(file, None, self.open_complete)
+            self.editorpage.file = file
+            self.editorpage.load_file_async(self.open_complete)
 
     def open_cb(self, dialog, response):
         try:
             file = dialog.open_finish(response)
-            self.editorpage.load_file_async(file, None, self.open_complete)
+            self.editorpage.file = file
+            self.editorpage.load_file_async(self.open_complete)
         except GLib.Error as err:
             if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
                 return

@@ -22,6 +22,7 @@ class EditorPage(Gtk.ScrolledWindow):
 
         self.compile_cancellable = None
         self.save_cancellable = None
+        self.load_cancellable = None
         self.file = None
 
         self.textview.get_buffer().connect("modified-changed", self.on_buffer_modified_changed)
@@ -35,15 +36,16 @@ class EditorPage(Gtk.ScrolledWindow):
         prefix = "• " if self.modified else ""
         self.props.title = prefix + self.get_display_name()
 
-    def load_file_async(self, file, cancellable, callback):
-        file.load_contents_async(cancellable, callback)
+    def load_file_async(self, callback):
+        if self.load_cancellable is not None: self.load_cancellable.cancel()
+        self.load_cancellable = Gio.Cancellable()
+        self.file.load_contents_async(self.load_cancellable, callback)
 
     def load_file_finish(self, file, result):
         success, contents, _ = file.load_contents_finish(result)
         if not success:
             raise Exception(f"Unable to open {file.get_path()}")
         text = contents.decode("utf-8")
-        self.file = file
         buffer = self.textview.props.buffer
         buffer.props.text = text
         buffer.set_modified(False)  # This also updates the title :D
@@ -81,10 +83,7 @@ class EditorPage(Gtk.ScrolledWindow):
     def compile_async(self, callback):
         if self.compile_cancellable:
             self.compile_cancellable.cancel()
-        self.compile_cancellable = None
-
-        # Otherwise we can proceed with compiling
-        self.cancellable = Gio.Cancellable()
+        self.compile_cancellable = Gio.Cancellable()
         pwd = self.file.get_parent().get_path()
         cmd = ['flatpak-spawn', '--host', 'latexmk', '-synctex=1',
                '-interaction=nonstopmode', '-pdf', "-g",
