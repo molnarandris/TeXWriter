@@ -137,7 +137,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     def save(self, callback=None):
         if self.editorpage.file:
-            self.editorpage.save_file_async(self.save_complete, callback)
+            self.editorpage.save_file(callback)
         else:
             self.save_as(callback)
 
@@ -155,15 +155,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.notify(f"Unable to save file: {err.message}")
         else:
             self.editorpage.file = file
-            self.editorpage.save_file_async(self.save_complete, callback)
-
-    def save_complete(self, file, result, callback):
-        try:
-            self.editorpage.save_file_finish(file, result)
-        except Exception as err:
-            self.notify(err.value)
-        if callback:
-            callback()
+            self.editorpage.save_file(callback)
 
     def compile(self):
         editor = self.editorpage

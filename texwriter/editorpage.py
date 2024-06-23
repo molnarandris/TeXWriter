@@ -61,7 +61,7 @@ class EditorPage(Gtk.ScrolledWindow):
         if callback is not None: callback()
 
 
-    def save_file_async(self, callback, user_data=None):
+    def save_file(self, callback=None):
         buffer = self.textview.props.buffer
         start = buffer.get_start_iter()
         end = buffer.get_end_iter()
@@ -77,18 +77,22 @@ class EditorPage(Gtk.ScrolledWindow):
                                                make_backup=False,
                                                flags=Gio.FileCreateFlags.NONE,
                                                cancellable=self.save_cancellable,
-                                               callback=callback,
-                                               user_data=user_data)
+                                               callback=self.save_file_complete,
+                                               user_data=callback)
 
-    def save_file_finish(self, file, result):
+    def save_file_complete(self, file, result, callback):
         self.save_cancellable = None
         try:
             file.replace_contents_finish(result)
         except:
-            raise Exception(f"Unable to save {self.display_name}")
-        self.textview.get_buffer().set_modified(False)
-        self.file = file
-        self.title = self.display_name
+            win = self.props.root
+            win.notify(f"Unable to save {self.display_name}")
+        else:
+            self.textview.get_buffer().set_modified(False)
+            self.file = file
+            self.title = self.display_name
+        finally:
+            if callback: callback()
 
     def compile_async(self, callback):
         if self.compile_cancellable:
