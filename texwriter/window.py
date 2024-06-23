@@ -25,6 +25,7 @@ from gi.repository import Gdk
 from .pdfviewer import PdfViewer
 from .logviewer import LogViewer
 from .editorpage import EditorPage
+from .resultviewer import ResultViewer
 
 import sys
 import re
@@ -39,13 +40,15 @@ class TexwriterWindow(Adw.ApplicationWindow):
     paned = Gtk.Template.Child()
     editorpage = Gtk.Template.Child()
     toastoverlay = Gtk.Template.Child()
-    pdfview = Gtk.Template.Child()
-    logview = Gtk.Template.Child()
-    result_stack = Gtk.Template.Child()
     pdf_log_switch = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        self.result_stack = ResultViewer()
+        self.pdfview = self.result_stack.pdfview
+        self.logview = self.result_stack.logview
+        self.paned.set_end_child(self.result_stack)
 
         # Save and restore window geometry
         # File loading is in main.py and saving is in do_close_request.
