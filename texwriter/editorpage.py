@@ -36,19 +36,30 @@ class EditorPage(Gtk.ScrolledWindow):
         prefix = "• " if self.modified else ""
         self.props.title = prefix + self.get_display_name()
 
-    def load_file_async(self, callback):
+    def load_file(self, callback=None):
         if self.load_cancellable is not None: self.load_cancellable.cancel()
         self.load_cancellable = Gio.Cancellable()
-        self.file.load_contents_async(self.load_cancellable, callback)
+        self.file.load_contents_async(self.load_cancellable,
+                                      self.load_file_complete,
+                                      callback)
 
-    def load_file_finish(self, file, result):
+    def load_file_complete(self, file, result, callback):
         success, contents, _ = file.load_contents_finish(result)
-        if not success:
-            raise Exception(f"Unable to open {file.get_path()}")
-        text = contents.decode("utf-8")
-        buffer = self.textview.props.buffer
-        buffer.props.text = text
-        buffer.set_modified(False)  # This also updates the title :D
+        if success:
+            try:
+                text = contents.decode("utf-8")
+            except UnicodeError as err:
+                win = self.props.root
+                win.notify(f"The file {self.get_display_name()} is not UTF-8 encoded")
+            else:
+                buffer = self.textview.props.buffer
+                buffer.props.text = text
+                buffer.set_modified(False)  # This also updates the title :D
+        else:
+            win = self.props.root
+            win.notify(f"Unable to load file {self.get_display_name()}")
+        if callback is not None: callback()
+
 
     def save_file_async(self, callback, user_data=None):
         buffer = self.textview.props.buffer

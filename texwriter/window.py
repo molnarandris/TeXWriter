@@ -107,7 +107,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             dialog.open(self, None, self.open_cb)
         else:
             self.editorpage.file = file
-            self.editorpage.load_file_async(self.open_complete)
+            self.editorpage.load_file(self.open_complete)
 
     def open_cb(self, dialog, response):
         try:
@@ -119,16 +119,9 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.notify(f"Unable to open file: {err.message}")
         else:
             self.editorpage.file = file
-            self.editorpage.load_file_async(self.open_complete)
+            self.editorpage.load_file(self.open_complete)
 
-    def open_complete(self, file, result):
-        try:
-            self.editorpage.load_file_finish(file, result)
-        except UnicodeError as err:
-            self.notify(f"The file {self.editorpage.get_display_name()} is not UTF-8 encoded")
-        except Exception as err:
-            self.notify(err.value)
-
+    def open_complete(self):
         self.load_pdf()
         self.load_log()
 
