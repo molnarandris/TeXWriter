@@ -34,7 +34,7 @@ class EditorPage(Gtk.ScrolledWindow):
 
     def on_buffer_modified_changed(self, *_args):
         prefix = "• " if self.modified else ""
-        self.props.title = prefix + self.get_display_name()
+        self.props.title = prefix + self.display_name
 
     def load_file(self, callback=None):
         if self.load_cancellable is not None: self.load_cancellable.cancel()
@@ -50,14 +50,14 @@ class EditorPage(Gtk.ScrolledWindow):
                 text = contents.decode("utf-8")
             except UnicodeError as err:
                 win = self.props.root
-                win.notify(f"The file {self.get_display_name()} is not UTF-8 encoded")
+                win.notify(f"The file {self.display_name} is not UTF-8 encoded")
             else:
                 buffer = self.textview.props.buffer
                 buffer.props.text = text
                 buffer.set_modified(False)  # This also updates the title :D
         else:
             win = self.props.root
-            win.notify(f"Unable to load file {self.get_display_name()}")
+            win.notify(f"Unable to load file {self.display_name}")
         if callback is not None: callback()
 
 
@@ -81,15 +81,14 @@ class EditorPage(Gtk.ScrolledWindow):
                                                user_data=user_data)
 
     def save_file_finish(self, file, result):
-        display_name = self.get_display_name(file)
         self.save_cancellable = None
         try:
             file.replace_contents_finish(result)
         except:
-            raise Exception(f"Unable to save {display_name}")
+            raise Exception(f"Unable to save {self.display_name}")
         self.textview.get_buffer().set_modified(False)
         self.file = file
-        self.title = display_name
+        self.title = self.display_name
 
     def compile_async(self, callback):
         if self.compile_cancellable:
@@ -141,7 +140,8 @@ class EditorPage(Gtk.ScrolledWindow):
             height = float(match[4])
         return (width, height, x, y, page)
 
-    def get_display_name(self, file=None):
+    @property
+    def display_name(self, file=None):
         if file is None: file = self.file
         info = file.query_info("standard::display-name",
                                Gio.FileQueryInfoFlags.NONE)

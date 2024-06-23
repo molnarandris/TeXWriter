@@ -177,7 +177,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         try:
             editor.compile_finish(source, result)
         except:
-            display_name = editor.get_display_name()
+            display_name = editor.display_name
             self.notify(f"Compilation of {display_name} failed")
             self.result_stack.set_visible_child_name("log")
         else:
@@ -209,7 +209,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
                                          _("“%s” contains unsaved changes. " +
                                            "If you don’t save, " +
                                            "all your changes will be " +
-                                           "permanently lost.") % editor.get_display_name()
+                                           "permanently lost.") % editor.display_name
                                          )
             dialog.add_response("cancel", _("Cancel"))
             dialog.add_response("close", _("Discard"))
