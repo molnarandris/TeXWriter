@@ -41,14 +41,15 @@ class TexwriterWindow(Adw.ApplicationWindow):
     editorpage = Gtk.Template.Child()
     toastoverlay = Gtk.Template.Child()
     pdf_log_switch = Gtk.Template.Child()
+    result_stack = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.result_stack = ResultViewer()
-        self.pdfview = self.result_stack.pdfview
-        self.logview = self.result_stack.logview
-        self.paned.set_end_child(self.result_stack)
+        self.result_view = ResultViewer()
+        self.pdfview = self.result_view.pdfview
+        self.logview = self.result_view.logview
+        self.result_stack.add_child(self.result_view)
 
         # Save and restore window geometry
         # File loading is in main.py and saving is in do_close_request.
@@ -97,7 +98,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(line))
         self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
         self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
-        self.result_stack.connect("notify::visible-child-name", self.stack_change_cb)
+        self.result_view.connect("notify::visible-child-name", self.stack_change_cb)
 
     def notify(self, str):
         toast = Adw.Toast.new(str)
@@ -174,10 +175,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
         except:
             display_name = editor.display_name
             self.notify(f"Compilation of {display_name} failed")
-            self.result_stack.set_visible_child_name("log")
+            self.result_view.set_visible_child_name("log")
         else:
             self.load_pdf()
-            self.result_stack.set_visible_child_name("pdf")
+            self.result_view.set_visible_child_name("pdf")
             self.synctex_fwd()
         finally:
             self.load_log()
@@ -239,11 +240,11 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.save(callback=self.close)
 
     def pdf_log_switch_cb(self, button):
-        match self.result_stack.get_visible_child_name():
+        match self.result_view.get_visible_child_name():
             case "pdf":
-                self.result_stack.set_visible_child_name("log")
+                self.result_view.set_visible_child_name("log")
             case "log":
-                self.result_stack.set_visible_child_name("pdf")
+                self.result_view.set_visible_child_name("pdf")
             case _:
                 logger.warning("Pdf log switch button clicked while stack is not visible")
 
