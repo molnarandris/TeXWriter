@@ -58,7 +58,7 @@ class EditorPage(Gtk.ScrolledWindow):
         else:
             win = self.props.root
             win.notify(f"Unable to load file {self.display_name}")
-        if callback is not None: callback()
+        if callback is not None: callback(self)
 
 
     def save_file(self, callback=None):

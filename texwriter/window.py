@@ -117,14 +117,14 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.editorpage.file = file
             self.editorpage.load_file(self.open_complete)
 
-    def open_complete(self):
+    def open_complete(self, editor):
         result_view = ResultViewer()
         self.pdfview = result_view.pdfview
         self.logview = result_view.logview
         self.result_stack.add(result_view)
         self.result_stack.set_visible_child(result_view)
-        self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(line))
-        self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
+        self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(editor, line))
+        self.logview.connect("row-activated", lambda _, row: self.scroll_to(editor, row.line))
         self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
         result_view.connect("notify::visible-child-name", self.stack_change_cb)
         # settings.bind("pdf-scale", self.pdfview, "scale", Gio.SettingsBindFlags.DEFAULT)
@@ -197,8 +197,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         width, height, x, y, page = result
         self.pdfview.synctex_fwd(width, height, x, y, page)
 
-    def scroll_to(self, line, offset=0):
-        editor = self.editorpage
+    def scroll_to(self, editor, line, offset=0):
         editor.scroll_to(line,offset)
 
     def do_close_request(self):
