@@ -46,10 +46,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.result_view = ResultViewer()
-        self.pdfview = self.result_view.pdfview
-        self.logview = self.result_view.logview
-        self.result_stack.add_child(self.result_view)
+        self.result_stack.set_visible_child_name("empty")
 
         # Save and restore window geometry
         # File loading is in main.py and saving is in do_close_request.
@@ -58,7 +55,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
         settings.bind("height", self, "default-height", Gio.SettingsBindFlags.DEFAULT)
         settings.bind("maximized", self, "maximized", Gio.SettingsBindFlags.DEFAULT)
         settings.bind("paned-position", self.paned, "position", Gio.SettingsBindFlags.DEFAULT)
-        settings.bind("pdf-scale", self.pdfview, "scale", Gio.SettingsBindFlags.DEFAULT)
 
         # Set up window actions
         action = Gio.SimpleAction.new("open", None)
@@ -95,10 +91,6 @@ class TexwriterWindow(Adw.ApplicationWindow):
         # Ongoing operation = cancellable is not None
         self.save_cancellable = None
         self.compile_cancellable = None
-        self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(line))
-        self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
-        self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
-        self.result_view.connect("notify::visible-child-name", self.stack_change_cb)
 
     def notify(self, str):
         toast = Adw.Toast.new(str)
@@ -126,6 +118,17 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.editorpage.load_file(self.open_complete)
 
     def open_complete(self):
+        result_view = ResultViewer()
+        self.pdfview = result_view.pdfview
+        self.logview = result_view.logview
+        self.result_stack.add(result_view)
+        self.result_stack.set_visible_child(result_view)
+        self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(line))
+        self.logview.connect("row-activated", lambda _, row: self.scroll_to(row.line))
+        self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
+        result_view.connect("notify::visible-child-name", self.stack_change_cb)
+        # settings.bind("pdf-scale", self.pdfview, "scale", Gio.SettingsBindFlags.DEFAULT)
+
         self.load_pdf()
         self.load_log()
 

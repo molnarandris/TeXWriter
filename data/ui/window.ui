@@ -44,7 +44,18 @@
                   </object>
                 </child>
                 <child>
-                  <object class="GtkStack" id="result_stack"></object>
+                  <object class="AdwViewStack" id="result_stack">
+                    <child>
+                      <object class="AdwViewStackPage">
+                        <property name="name">empty</property>
+                        <property name="child">
+                          <object class="AdwStatusPage">
+                            <property name="title">No Pdf to display</property>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                  </object>
                 </child>
               </object>
             </child>
