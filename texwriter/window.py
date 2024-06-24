@@ -119,28 +119,29 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
     def open_complete(self, editor):
         result_view = ResultViewer()
-        self.pdfview = result_view.pdfview
-        self.logview = result_view.logview
+        editor.result_view = result_view
         self.result_stack.add(result_view)
         self.result_stack.set_visible_child(result_view)
-        self.pdfview.connect("synctex-back", lambda _, line: self.scroll_to(editor, line))
-        self.logview.connect("row-activated", lambda _, row: self.scroll_to(editor, row.line))
+        pdfview = result_view.pdfview
+        pdfview.connect("synctex-back", lambda _, line: self.scroll_to(editor, line))
+        logview = result_view.logview
+        logview.connect("row-activated", lambda _, row: self.scroll_to(editor, row.line))
         self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
         result_view.connect("notify::visible-child-name", self.stack_change_cb)
         # settings.bind("pdf-scale", self.pdfview, "scale", Gio.SettingsBindFlags.DEFAULT)
 
-        self.load_pdf()
-        self.load_log()
+        self.load_pdf(editor)
+        self.load_log(editor)
 
-    def load_pdf(self):
-        pdfpath = self.editorpage.file.get_path()[:-3] + "pdf"
+    def load_pdf(self, editor):
+        pdfpath = editor.file.get_path()[:-3] + "pdf"
         pdffile = Gio.File.new_for_path(pdfpath)
-        self.pdfview.load_file(pdffile)
+        editor.result_view.pdfview.load_file(pdffile)
 
-    def load_log(self):
-        logpath = self.editorpage.file.get_path()[:-3] + "log"
+    def load_log(self, editor):
+        logpath = editor.file.get_path()[:-3] + "log"
         logfile = Gio.File.new_for_path(logpath)
-        self.logview.load_file(logfile)
+        editor.result_view.logview.load_file(logfile)
 
     def save(self, callback=None):
         if self.editorpage.file:
@@ -178,24 +179,17 @@ class TexwriterWindow(Adw.ApplicationWindow):
         except:
             display_name = editor.display_name
             self.notify(f"Compilation of {display_name} failed")
-            self.result_view.set_visible_child_name("log")
+            editor.result_view.set_visible_child_name("log")
         else:
-            self.load_pdf()
-            self.result_view.set_visible_child_name("pdf")
-            self.synctex_fwd()
+            self.load_pdf(editor)
+            editor.result_view.set_visible_child_name("pdf")
+            editor.synctex(editor.result_view.pdfview.synctex_fwd)
         finally:
-            self.load_log()
+            self.load_log(editor)
 
     def synctex_fwd(self):
-        self.editorpage.synctex_async(self.synctex_complete)
-
-    def synctex_complete(self, source, result):
-        try:
-            result = self.editorpage.synctex_finish(source,result)
-        except:
-            self.notify("Synctex error")
-        width, height, x, y, page = result
-        self.pdfview.synctex_fwd(width, height, x, y, page)
+        editor = self.editorpage
+        editor.synctex(editor.result_view.pdfview.synctex_fwd)
 
     def scroll_to(self, editor, line, offset=0):
         editor.scroll_to(line,offset)

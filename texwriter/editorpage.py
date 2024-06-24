@@ -121,7 +121,7 @@ class EditorPage(Gtk.ScrolledWindow):
         if not source.get_successful():
             raise Exception("Compilation failed")
 
-    def synctex_async(self, callback):
+    def synctex(self, callback):
         buffer = self.textview.props.buffer
         it = buffer.get_iter_at_mark(buffer.get_insert())
         path = self.file.get_path()
@@ -129,12 +129,13 @@ class EditorPage(Gtk.ScrolledWindow):
         cmd = ['flatpak-spawn', '--host', 'synctex', 'view', '-i', pos, '-o', path]
         flags = Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
         proc = Gio.Subprocess.new(cmd, flags)
-        proc.communicate_utf8_async(None, None, callback)
+        proc.communicate_utf8_async(None, None, self.synctex_complete, callback)
 
-    def synctex_finish(self, source, result):
+    def synctex_complete(self, source, result, callback):
         success, stdout, stderr = source.communicate_utf8_finish(result)
         if not success:
-            raise Exception("Synctex error")
+            win = self.props.root
+            win.notify("Could not run synctex")
         record = "Page:(.*)\n.*\n.*\nh:(.*)\nv:(.*)\nW:(.*)\nH:(.*)"
         for match in re.findall(record, stdout):
             page = int(match[0])-1
@@ -142,7 +143,7 @@ class EditorPage(Gtk.ScrolledWindow):
             y = float(match[2])
             width = float(match[3])
             height = float(match[4])
-        return (width, height, x, y, page)
+        callback(width, height, x, y, page)
 
     @property
     def display_name(self, file=None):
