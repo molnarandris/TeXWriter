@@ -38,7 +38,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'TexwriterWindow'
 
     paned = Gtk.Template.Child()
-    editorpage = Gtk.Template.Child()
+    tabview = Gtk.Template.Child()
     toastoverlay = Gtk.Template.Child()
     pdf_log_switch = Gtk.Template.Child()
     result_stack = Gtk.Template.Child()
@@ -47,6 +47,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
         super().__init__(**kwargs)
 
         self.result_stack.set_visible_child_name("empty")
+        editorpage = EditorPage()
+        self.tabview.append(editorpage)
+        self.editorpage = editorpage
+        self.title_binding = self.editorpage.bind_property("title", self, "title")
 
         # Save and restore window geometry
         # File loading is in main.py and saving is in do_close_request.
@@ -84,13 +88,19 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.paned.set_resize_end_child(True)
 
         # TODO: override textbuffer's do_modified_changed.
-        self.editorpage.bind_property("title", self, "title")
+        self.title_binding = None
+        self.tabview.connect("notify::selected-page", self.tab_page_change_cb)
         self.force_close = False
         # Keep track whether there is an ongoing operation.
         # If yes, we have to cancel it before starting a new one.
         # Ongoing operation = cancellable is not None
         self.save_cancellable = None
         self.compile_cancellable = None
+
+    def tab_page_change_cb(self, psec):
+        self.editorpage.unbind(self.title_binding)
+        self.editorpage = self.tabview.props.selected_page
+        self.title_binding = self.editorpage.bind_property("title", self, "title")
 
     def notify(self, str):
         toast = Adw.Toast.new(str)
