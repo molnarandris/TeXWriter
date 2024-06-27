@@ -10,6 +10,16 @@
       <object class="AdwToolbarView">
         <child type="top">
           <object class="AdwHeaderBar" id="header_bar">
+            <property name="title-widget">
+              <object class="GtkLabel" id="title">
+                <property name="single-line-mode">True</property>
+                <property name="ellipsize">end</property>
+                <property name="width-chars">5</property>
+                <style>
+                  <class name="title"/>
+                </style>
+              </object>
+            </property>
             <child type="start">
               <object class="GtkButton">
                 <property name="tooltip-text" translatable="yes">New File</property>

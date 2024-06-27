@@ -42,6 +42,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     toastoverlay = Gtk.Template.Child()
     pdf_log_switch = Gtk.Template.Child()
     result_stack = Gtk.Template.Child()
+    title = Gtk.Template.Child()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -50,7 +51,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         editorpage = EditorPage()
         self.tabview.append(editorpage)
         self.editorpage = editorpage
-        self.title_binding = self.editorpage.bind_property("title", self, "title")
+        self.title_binding = self.editorpage.bind_property("title", self.title, "label")
 
         # Save and restore window geometry
         # File loading is in main.py and saving is in do_close_request.
@@ -100,7 +101,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
     def tab_page_change_cb(self, psec):
         self.editorpage.unbind(self.title_binding)
         self.editorpage = self.tabview.props.selected_page
-        self.title_binding = self.editorpage.bind_property("title", self, "title")
+        self.title_binding = self.editorpage.bind_property("title", self.title, "label")
 
     def notify(self, str):
         toast = Adw.Toast.new(str)
