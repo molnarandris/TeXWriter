@@ -26,7 +26,7 @@ class EditorPage(Gtk.ScrolledWindow):
         self.file = None
 
         self.textview.get_buffer().connect("modified-changed", self.on_buffer_modified_changed)
-        # self.popover = AutocompletePopover(self.textview)
+        self.popover = AutocompletePopover(self.textview)
 
     @property
     def modified(self):

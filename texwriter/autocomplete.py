@@ -24,7 +24,7 @@ class AutocompletePopover(Gtk.Popover):
 
         controller = Gtk.GestureClick()
         controller.connect("released", self.button_release_cb)
-        parent.get_root().add_controller(controller)
+        #parent.get_root().add_controller(controller)
 
         file = Gio.File.new_for_uri("resource:///com/github/molnarandris/texwriter/completion/completion.txt")
         contents = file.load_contents()
