@@ -46,9 +46,9 @@ class LogViewer(Gtk.ListBox):
             logger.warning(f"Unable to load the contents of the log file at {path}: the file is not encoded with UTF-8")
             return
 
-        badbox_re  = re.compile("^((?:Over|Under)full \\\\[hv]box).* ([0-9]+)--[0-9]+.*\n",re.MULTILINE)
-        warning_re = re.compile("^LaTeX Warning: (Reference|Citation) '(.*)'.* ([0-9]*)\.\n",re.MULTILINE)
-        error_re   = re.compile("^! (.*)\.\nl\.([0-9]*) (.*$)",re.MULTILINE)
+        badbox_re  = re.compile("^((?:Over|Under)full \\\\[hv]box).* ([0-9]+)--[0-9]+.*\\n",re.MULTILINE)
+        warning_re = re.compile("^LaTeX Warning: (Reference|Citation) `(.*)'.* ([0-9]*)\\.\\n",re.MULTILINE)
+        error_re   = re.compile("^! (.*)\\n.* (.+)\\n(?s:.*)^l\\.(\\d*).*",re.MULTILINE)
 
         for match in re.finditer(badbox_re, text):
             title = match.group(1)
@@ -61,15 +61,16 @@ class LogViewer(Gtk.ListBox):
             self.add_row(title, line)
 
         for match in re.finditer(error_re, text):
-            title = match.group(1) + ": " + match.group(3)
-            line = int(match.group(2))
+            title = match.group(1) + " : " + match.group(2)
+            line = int(match.group(3))
             self.add_row(title, line)
 
 
     def add_row(self, title, line):
         row = Adw.ActionRow.new()
         row.set_activatable(True)
-        row.line = line
+        row.line = line - 1
+        row.set_use_markup(False)
         row.set_title(title)
         self.append(row)
 
