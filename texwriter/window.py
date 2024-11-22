@@ -136,7 +136,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         pdfview = result_view.pdfview
         pdfview.connect("synctex-back", lambda _, line: self.scroll_to(editor, line))
         logview = result_view.logview
-        logview.connect("row-activated", lambda _, row: self.scroll_to(editor, row.line))
+        logview.connect("row-activated", lambda _, row: self.scroll_to(editor, row.line, row.text))
         self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
         result_view.connect("notify::visible-child-name", self.stack_change_cb)
         # settings.bind("pdf-scale", self.pdfview, "scale", Gio.SettingsBindFlags.DEFAULT)
@@ -202,8 +202,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
         editor = self.editorpage
         editor.synctex(editor.result_view.pdfview.synctex_fwd)
 
-    def scroll_to(self, editor, line, offset=0):
-        editor.scroll_to(line,offset)
+    def scroll_to(self, editor, line, text=None):
+        editor.scroll_to(line,text)
 
     def do_close_request(self):
         editor = self.editorpage

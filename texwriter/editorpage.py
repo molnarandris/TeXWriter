@@ -7,8 +7,8 @@ from gi.repository import GLib
 from gi.repository import Adw
 from .autocomplete import AutocompletePopover
 
+TEXT_ONLY = Gtk.TextSearchFlags.TEXT_ONLY
 logger = logging.getLogger("Texwriter")
-
 
 @Gtk.Template(resource_path="/com/github/molnarandris/texwriter/ui/editorpage.ui")
 class EditorPage(Gtk.ScrolledWindow):
@@ -25,8 +25,11 @@ class EditorPage(Gtk.ScrolledWindow):
         self.load_cancellable = None
         self.file = None
 
-        self.textview.get_buffer().connect("modified-changed", self.on_buffer_modified_changed)
         self.popover = AutocompletePopover(self.textview)
+        buffer = self.textview.get_buffer()
+        buffer.connect("modified-changed", self.on_buffer_modified_changed)
+        buffer.create_tag('highlight', background='red')
+
 
     @property
     def modified(self):
@@ -158,9 +161,16 @@ class EditorPage(Gtk.ScrolledWindow):
             display_name = file.get_basename()
         return display_name
 
-    def scroll_to(self, line, offset):
+    def scroll_to(self, line, word=None):
         buffer = self.textview.props.buffer
         _, it = buffer.get_iter_at_line(line)
+        bound = it.copy()
+        bound.forward_to_line_end()
+        if word:
+            start, end = it.forward_search(word, TEXT_ONLY, bound)
+            tag = buffer.apply_tag_by_name('highlight', start, end)
+            GLib.timeout_add(500, lambda: buffer.remove_tag_by_name('highlight',start,end))
+            it = start
         self.textview.scroll_to_iter(it, 0.3, False, 0, 0)
         buffer.place_cursor(it)
         self.textview.grab_focus()

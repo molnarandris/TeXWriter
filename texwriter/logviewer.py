@@ -58,18 +58,19 @@ class LogViewer(Gtk.ListBox):
         for match in re.finditer(warning_re, text):
             title = "Undefined " + match.group(1).lower() + ": " + match.group(2)
             line = int(match.group(3))
-            self.add_row(title, line)
+            self.add_row(title, line, match.group(2))
 
         for match in re.finditer(error_re, text):
             title = match.group(1) + " : " + match.group(2)
             line = int(match.group(3))
-            self.add_row(title, line)
+            self.add_row(title, line, match.group(2))
 
 
-    def add_row(self, title, line):
+    def add_row(self, title, line, text=None):
         row = Adw.ActionRow.new()
         row.set_activatable(True)
         row.line = line - 1
+        row.text = text
         row.set_use_markup(False)
         row.set_title(title)
         self.append(row)
