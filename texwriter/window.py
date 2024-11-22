@@ -247,11 +247,12 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.save(callback=self.close)
 
     def pdf_log_switch_cb(self, button):
-        match self.result_view.get_visible_child_name():
+        result_view = self.editorpage.result_view
+        match result_view.get_visible_child_name():
             case "pdf":
-                self.result_view.set_visible_child_name("log")
+                result_view.set_visible_child_name("log")
             case "log":
-                self.result_view.set_visible_child_name("pdf")
+                result_view.set_visible_child_name("pdf")
             case _:
                 logger.warning("Pdf log switch button clicked while stack is not visible")
 
