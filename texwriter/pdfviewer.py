@@ -17,7 +17,7 @@ class PdfViewer(Gtk.ScrolledWindow):
     __gtype_name__ = 'PdfViewer'
 
     __gsignals__ = {
-        'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (int,)),
+        'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (int, str, str)),
     }
 
 
@@ -100,7 +100,7 @@ class PdfViewer(Gtk.ScrolledWindow):
         overlay.add_overlay(rect)
         self.scroll_to(page,y)
 
-    def on_synctex_back(self, page, x, y):
+    def on_synctex_back(self, page, x, y, around, after):
         if self.file is None: return
         arg = str(page.page_number) + ":" + str(x) + ":" + str(y)
         arg += ":" + self.file.get_path()
@@ -109,16 +109,16 @@ class PdfViewer(Gtk.ScrolledWindow):
         proc = Gio.Subprocess.new(cmd, flags)
         if self.cancellable: self.cancellable.cancel()
         self.cancellable = Gio.Cancellable()
-        proc.communicate_utf8_async(None, None, self.synctex_back_complete)
+        proc.communicate_utf8_async(None, None, self.synctex_back_complete, around, after)
 
-    def synctex_back_complete(self, source, result):
+    def synctex_back_complete(self, source, result, around, after):
         logger.info("Synctex back complete")
         success, stdout, _ = source.communicate_utf8_finish(result)
         self.cancellable = None
         if stdout is not None:
             result = re.search("Line:(.*)", stdout)
             line = int(result.group(1)) - 1
-            self.emit("synctex-back", line)
+            self.emit("synctex-back", line, around, after)
         else:
             logger.warning("Synctex back failed")
 
@@ -142,7 +142,7 @@ class PdfPage(Gtk.Widget):
     __gtype_name__ = 'PdfPage'
 
     __gsignals__ = {
-        'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (float, float)),
+        'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (float, float, str, str)),
     }
 
     def __init__(self, poppler_page, scale=1.0):
@@ -163,8 +163,28 @@ class PdfPage(Gtk.Widget):
         return self.poppler_page.get_index()+1
 
     def on_click(self, controller, n_press, x, y):
-        if n_press == 2:
-            self.emit("synctex-back", x/self.scale, y/self.scale)
+        x = x/self.scale
+        y = y/self.scale
+        if n_press != 2: return
+
+        # Retrieve all text from page and locate the cursor in one of them
+        _,rectangles = self.poppler_page.get_text_layout()
+        ind = 0
+        for rect in rectangles:
+            if rect.y1 > y or (rect.y2 >= y and rect.x1 > x): break
+            ind += 1
+        if ind > 0: ind = ind-1
+
+        # Try to get the text around it
+        rect = Poppler.Rectangle()
+        rect.x1 = min(rectangles[ind-10].x1,rectangles[ind].x1)
+        rect.x2 = max(rectangles[ind+10].x2,rectangles[ind].x2)
+        rect.y1 = rectangles[ind].y1
+        rect.y2 = rectangles[ind].y2
+        text_around = self.poppler_page.get_text_for_area(rect)
+        rect.x1 = rectangles[ind].x1
+        text_after = self.poppler_page.get_text_for_area(rect)
+        self.emit("synctex-back", x, y, text_around, text_after)
 
     def set_scale(self, scale):
         width, height = self.poppler_page.get_size()

@@ -134,7 +134,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.result_stack.add(result_view)
         self.result_stack.set_visible_child(result_view)
         pdfview = result_view.pdfview
-        pdfview.connect("synctex-back", lambda _, line: self.scroll_to(editor, line))
+        pdfview.connect("synctex-back", lambda _, line, around, after: self.scroll_to(editor, line, after))
         logview = result_view.logview
         logview.connect("row-activated", lambda _, row: self.scroll_to(editor, row.line, row.text))
         self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)

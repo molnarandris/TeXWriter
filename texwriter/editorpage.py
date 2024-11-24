@@ -167,10 +167,11 @@ class EditorPage(Gtk.ScrolledWindow):
         bound = it.copy()
         bound.forward_to_line_end()
         if word:
-            start, end = it.forward_search(word, TEXT_ONLY, bound)
-            tag = buffer.apply_tag_by_name('highlight', start, end)
-            GLib.timeout_add(500, lambda: buffer.remove_tag_by_name('highlight',start,end))
-            it = start
+            result = it.forward_search(word, TEXT_ONLY, bound)
+            if result is not None:
+                buffer.apply_tag_by_name('highlight', *result)
+                GLib.timeout_add(500, lambda: buffer.remove_tag_by_name('highlight',*result))
+                it = result[0]
         self.textview.scroll_to_iter(it, 0.3, False, 0, 0)
         buffer.place_cursor(it)
         self.textview.grab_focus()
