@@ -20,7 +20,6 @@ class PdfViewer(Gtk.ScrolledWindow):
         'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (int, str, str)),
     }
 
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.box = Gtk.Box()
@@ -60,10 +59,10 @@ class PdfViewer(Gtk.ScrolledWindow):
             self.box.remove(child)
             page = child.get_child()
             page.unparent()
-            del(page.poppler_page)
-            del(page)
+            del page.poppler_page
+            del page
             child.set_child(None)
-            del(child)
+            del child
             child = self.box.get_first_child()
         try:
             poppler_doc = Poppler.Document.new_from_gfile(file, None, None)
@@ -74,7 +73,7 @@ class PdfViewer(Gtk.ScrolledWindow):
                 overlay = Gtk.Overlay()
                 overlay.set_child(page)
                 self.box.append(overlay)
-            del(poppler_doc)
+            del poppler_doc
         except:
             logger.warning(f"Opening the following pdf failed: {file.get_path()}")
 
@@ -107,9 +106,11 @@ class PdfViewer(Gtk.ScrolledWindow):
         cmd = ['flatpak-spawn', '--host', 'synctex', 'edit', '-o', arg]
         flags = Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
         proc = Gio.Subprocess.new(cmd, flags)
-        if self.cancellable: self.cancellable.cancel()
+        if self.cancellable:
+            self.cancellable.cancel()
         self.cancellable = Gio.Cancellable()
-        proc.communicate_utf8_async(None, None, self.synctex_back_complete, around, after)
+        proc.communicate_utf8_async(None, None, self.synctex_back_complete,
+                                    around, after)
 
     def synctex_back_complete(self, source, result, around, after):
         logger.info("Synctex back complete")
@@ -131,7 +132,7 @@ class PdfViewer(Gtk.ScrolledWindow):
     def scroll_to(self, page_num, y):
         page = self.get_page(page_num).get_child()
         point = Graphene.Point()
-        point.init(0,y)
+        point.init(0, y)
         _, p = page.compute_point(self.box, point)
         viewport = self.box.get_parent()
         vadj = viewport.get_vadjustment()
@@ -142,7 +143,8 @@ class PdfPage(Gtk.Widget):
     __gtype_name__ = 'PdfPage'
 
     __gsignals__ = {
-        'synctex-back': (GObject.SIGNAL_RUN_FIRST, None, (float, float, str, str)),
+        'synctex-back': (GObject.SIGNAL_RUN_FIRST, None,
+                         (float, float, str, str)),
     }
 
     def __init__(self, poppler_page, scale=1.0):
@@ -165,20 +167,23 @@ class PdfPage(Gtk.Widget):
     def on_click(self, controller, n_press, x, y):
         x = x/self.scale
         y = y/self.scale
-        if n_press != 2: return
+        if n_press != 2:
+            return
 
         # Retrieve all text from page and locate the cursor in one of them
-        _,rectangles = self.poppler_page.get_text_layout()
+        _, rectangles = self.poppler_page.get_text_layout()
         ind = 0
         for rect in rectangles:
-            if rect.y1 > y or (rect.y2 >= y and rect.x1 > x): break
+            if rect.y1 > y or (rect.y2 >= y and rect.x1 > x):
+                break
             ind += 1
-        if ind > 0: ind = ind-1
+        if ind > 0:
+            ind = ind-1
 
         # Try to get the text around it
         rect = Poppler.Rectangle()
-        rect.x1 = min(rectangles[ind-10].x1,rectangles[ind].x1)
-        rect.x2 = max(rectangles[ind+10].x2,rectangles[ind].x2)
+        rect.x1 = min(rectangles[ind-10].x1, rectangles[ind].x1)
+        rect.x2 = max(rectangles[ind+10].x2, rectangles[ind].x2)
         rect.y1 = rectangles[ind].y1
         rect.y2 = rectangles[ind].y2
         text_around = self.poppler_page.get_text_for_area(rect)
@@ -205,7 +210,7 @@ class PdfPage(Gtk.Widget):
 class SynctexRect(Gtk.Widget):
     __gtype_name__ = 'SynctexRect'
 
-    def __init__(self, width, height, x,y,scale):
+    def __init__(self, width, height, x, y, scale):
         super().__init__()
         height += 2
         self.color = Gdk.RGBA()
@@ -224,4 +229,3 @@ class SynctexRect(Gtk.Widget):
     def do_destroy(self):
         self.unparent()
         return False
-
