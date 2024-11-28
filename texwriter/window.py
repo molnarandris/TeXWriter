@@ -63,23 +63,19 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
         # Set up window actions
         action = Gio.SimpleAction.new("open", None)
-        action.connect("activate", lambda *_: self.open())
+        action.connect("activate", self.on_open_action)
         self.add_action(action)
 
-        action = Gio.SimpleAction.new("save", None)
-        action.connect("activate", lambda *_: self.save())
-        self.add_action(action)
-
-        action = Gio.SimpleAction.new("save-as", None)
-        action.connect("activate", lambda *_: self.save_as())
+        action = Gio.SimpleAction.new("save", GLib.VariantType("b"))
+        action.connect("activate", self.on_save_action)
         self.add_action(action)
 
         action = Gio.SimpleAction.new("compile", None)
-        action.connect("activate", lambda *_: self.compile())
+        action.connect("activate", self.on_compile_action)
         self.add_action(action)
 
         action = Gio.SimpleAction.new("synctex-fwd", None)
-        action.connect("activate", lambda *_: self.synctex_fwd())
+        action.connect("activate", self.on_synctex_fwd_action)
         self.add_action(action)
 
         # Setting paned resize-start-child and resize-end-child True
@@ -107,6 +103,9 @@ class TexwriterWindow(Adw.ApplicationWindow):
         toast = Adw.Toast.new(str)
         toast.set_timeout(2)
         self.toastoverlay.add_toast(toast)
+
+    def on_open_action(self, action, param):
+        self.open()
 
     def open(self, file=None):
         if file is None:
@@ -154,17 +153,18 @@ class TexwriterWindow(Adw.ApplicationWindow):
         logfile = Gio.File.new_for_path(logpath)
         editor.result_view.logview.load_file(logfile)
 
-    def save(self, callback=None):
-        if self.editorpage.file:
-            self.editorpage.save_file(callback)
+    def on_save_action(self, action, param):
+        save_as = param == GLib.Variant("b", True)
+        self.save(save_as)
+
+    def save(self, save_as=False, callback=None):
+        if save_as or not self.editorpage.file:
+            native = Gtk.FileDialog()
+            native.save(self, None, self.save_complete, callback)
         else:
-            self.save_as(callback)
+            self.editorpage.save_file(callback)
 
-    def save_as(self, callback=None):
-        native = Gtk.FileDialog()
-        native.save(self, None, self.save_as_cb, callback)
-
-    def save_as_cb(self, dialog, result, callback):
+    def save_complete(self, dialog, result, callback):
         try:
             file = dialog.save_finish(result)
         except GLib.Error as err:
@@ -176,11 +176,17 @@ class TexwriterWindow(Adw.ApplicationWindow):
             self.editorpage.file = file
             self.editorpage.save_file(callback)
 
+    def on_compile_action(self, action, param):
+        self.compile()
+
+    # TODO: check gnome builder for chained actions. Builders run button is similar
+    # Look at    gnome-builder/src/libide/gui/ide-run-button.c
+    # Also at gnome-builder/src/libide/foundry/ide-run-manager.c
     def compile(self):
         editor = self.editorpage
         # If needs saving, save first, then compile.
         if editor.modified:
-            self.save(self.compile)
+            self.save(callback = self.compile)
             return
         editor.compile_async(self.compile_complete)
 
@@ -198,7 +204,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         finally:
             self.load_log(editor)
 
-    def synctex_fwd(self):
+    def on_synctex_fwd_action(self, action, param):
         editor = self.editorpage
         editor.synctex(editor.result_view.pdfview.synctex_fwd)
 
