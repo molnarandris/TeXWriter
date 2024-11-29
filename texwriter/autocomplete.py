@@ -2,6 +2,7 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Gio
 from gi.repository import GObject
+import xml.etree.ElementTree as ET
 
 class AutocompletePopover(Gtk.Popover):
     __gtype_name__ = 'AutocompletePopover'
@@ -12,7 +13,11 @@ class AutocompletePopover(Gtk.Popover):
         self.set_autohide(False)
         self.is_active = False
         self.listbox = Gtk.ListBox()
-        self.set_child(self.listbox)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_child(self.listbox)
+        scroll.set_propagate_natural_width(True)
+        self.set_child(scroll)
+        self.commands = []
 
         controller = Gtk.EventControllerKey()
         controller.connect("key_pressed", self.key_press_cb)
@@ -26,13 +31,25 @@ class AutocompletePopover(Gtk.Popover):
         controller.connect("released", self.button_release_cb)
         #parent.get_root().add_controller(controller)
 
-        file = Gio.File.new_for_uri("resource:///com/github/molnarandris/texwriter/completion/completion.txt")
-        contents = file.load_contents()
-        text = contents[1].decode('utf-8')
-        for line in text.splitlines():
+        packages = ["tex", "latex-document", "amsmath", "amsthm"]
+        for pkg in packages:
+            file = Gio.File.new_for_uri(f"resource:///com/github/molnarandris/texwriter/completion/{pkg}.xml")
+            contents = file.load_contents()
+            text = contents[1].decode('utf-8')
+            root = ET.fromstring(text)
+            for child in root:
+                a = child.attrib
+                cmd = {'package': pkg,
+                       'command': a['text'],
+                       'description': _(a['description']),
+                       'lowpriority': True if a['lowpriority'] == "True" else False,
+                       'dotlabels': a['dotlabels']}
+                self.commands.append(cmd)
+
+        for cmd in self.commands:
             row = Gtk.ListBoxRow()
             row.set_halign(Gtk.Align.START)
-            row.text = line
+            row.text = cmd['command']
             row.set_child(Gtk.Label.new(row.text))
             self.listbox.append(row)
         self.selected_row = None

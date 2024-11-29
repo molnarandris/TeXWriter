@@ -14,6 +14,18 @@
     <file preprocess="xml-stripblanks">icons/pdf-symbolic.svg</file>
   </gresource>
   <gresource prefix="/com/github/molnarandris/texwriter">
-    <file>completion/completion.txt</file>
+    <file>completion/tex.xml</file>
+  </gresource>
+  <gresource prefix="/com/github/molnarandris/texwriter">
+    <file>completion/latex-document.xml</file>
+  </gresource>
+  <gresource prefix="/com/github/molnarandris/texwriter">
+    <file>completion/amssymb.xml</file>
+  </gresource>
+  <gresource prefix="/com/github/molnarandris/texwriter">
+    <file>completion/amsmath.xml</file>
+  </gresource>
+  <gresource prefix="/com/github/molnarandris/texwriter">
+    <file>completion/amsthm.xml</file>
   </gresource>
 </gresources>
