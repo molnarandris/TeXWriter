@@ -50,8 +50,14 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.result_stack.set_visible_child_name("empty")
         editorpage = EditorPage()
         self.tabview.append(editorpage)
+        self.title_binding = editorpage.bind_property("title", self.title, "label")
+        result_view = ResultViewer()
+        editorpage.result_view = result_view
         self.editorpage = editorpage
-        self.title_binding = self.editorpage.bind_property("title", self.title, "label")
+        self.result_stack.add(result_view)
+        self.result_stack.set_visible_child(result_view)
+        self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
+
 
         # Save and restore window geometry
         # File loading is in main.py and saving is in do_close_request.
@@ -63,7 +69,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
 
         # Set up window actions
         action = Gio.SimpleAction.new("open", None)
-        action.connect("activate", self.on_open_action)
+        action.connect("activate", lambda *_: self.open(None))
         self.add_action(action)
 
         action = Gio.SimpleAction.new("save", GLib.VariantType("b"))
@@ -104,44 +110,29 @@ class TexwriterWindow(Adw.ApplicationWindow):
         toast.set_timeout(2)
         self.toastoverlay.add_toast(toast)
 
-    def on_open_action(self, action, param):
-        self.open()
+    def open(self, file):
+        # When there will be tabs: find out if open in current editorpage
+        # Or create a new one and open it there
+        editorpage = self.editorpage
+        editorpage.open_async(file, None, self.open_complete)
 
-    def open(self, file=None):
-        if file is None:
-            dialog = Gtk.FileDialog()
-            dialog.open(self, None, self.open_cb)
-        else:
-            self.editorpage.file = file
-            self.editorpage.load_file(self.open_complete)
-
-    def open_cb(self, dialog, response):
+    def open_complete(self, editorpage, result, *user_data):
+        # I should call here open_complete
         try:
-            file = dialog.open_finish(response)
-        except GLib.Error as err:
-            if err.matches(Gtk.dialog_error_quark(), Gtk.DialogError.DISMISSED):
-                return
-            else:
-                self.notify(f"Unable to open file: {err.message}")
-        else:
-            self.editorpage.file = file
-            self.editorpage.load_file(self.open_complete)
-
-    def open_complete(self, editor):
-        result_view = ResultViewer()
-        editor.result_view = result_view
-        self.result_stack.add(result_view)
-        self.result_stack.set_visible_child(result_view)
+            editorpage.open_finish(result)
+        except:
+            self.notify("Can't open file")
+            return
+        result_view = editorpage.result_view
         pdfview = result_view.pdfview
-        pdfview.connect("synctex-back", lambda _, line, around, after: self.scroll_to(editor, line, after))
         logview = result_view.logview
-        logview.connect("row-activated", lambda _, row: self.scroll_to(editor, row.line, row.text))
-        self.pdf_log_switch.connect("clicked", self.pdf_log_switch_cb)
+        pdfview.connect("synctex-back", lambda _, line, around, after: self.scroll_to(editorpage, line, after))
+        logview.connect("row-activated", lambda _, row: self.scroll_to(editorpage, row.line, row.text))
         result_view.connect("notify::visible-child-name", self.stack_change_cb)
         # settings.bind("pdf-scale", self.pdfview, "scale", Gio.SettingsBindFlags.DEFAULT)
 
-        self.load_pdf(editor)
-        self.load_log(editor)
+        self.load_pdf(editorpage)
+        self.load_log(editorpage)
 
     def load_pdf(self, editor):
         pdfpath = editor.file.get_path()[:-3] + "pdf"

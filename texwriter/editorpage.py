@@ -22,7 +22,7 @@ class EditorPage(Gtk.ScrolledWindow):
 
         self.compile_cancellable = None
         self.save_cancellable = None
-        self.load_cancellable = None
+        self.open_task = None
         self.file = None
 
         self.popover = AutocompletePopover(self.textview)
@@ -39,30 +39,49 @@ class EditorPage(Gtk.ScrolledWindow):
         prefix = "• " if self.modified else ""
         self.props.title = prefix + self.display_name
 
-    def load_file(self, callback=None):
-        if self.load_cancellable is not None: self.load_cancellable.cancel()
-        self.load_cancellable = Gio.Cancellable()
-        self.file.load_contents_async(self.load_cancellable,
-                                      self.load_file_complete,
-                                      callback)
-
-    def load_file_complete(self, file, result, callback):
-        success, contents, _ = file.load_contents_finish(result)
-        if success:
-            try:
-                text = contents.decode("utf-8")
-            except UnicodeError as err:
-                win = self.props.root
-                win.notify(f"The file {self.display_name} is not UTF-8 encoded")
-            else:
-                buffer = self.textview.props.buffer
-                buffer.props.text = text
-                buffer.set_modified(False)  # This also updates the title :D
+    def open_async(self, file, cancellable, callback, *user_data):
+        if self.open_task:
+            self.open_task.get_cancellable().cancel()
+        cancellable = cancellable or Gio.Cancellable()
+        task = Gio.Task.new(self, cancellable, callback, user_data)
+        self.open_task = task
+        if file is None:
+            Gtk.FileDialog().open(self.get_root(), cancellable,
+                                  self.open_dialog_cb, task)
         else:
-            win = self.props.root
-            win.notify(f"Unable to load file {self.display_name}")
-        if callback is not None: callback(self)
+            file.load_contents_async(
+                cancellable,
+                self.loaded_cb,
+                task)
 
+    def open_dialog_cb(self, dialog, response, task):
+        try:
+            file = dialog.open_finish(response)
+        except GLib.Error as err:
+            task.return_error(err)
+        else:
+            cancellable = task.get_cancellable()
+            file.load_contents_async(cancellable, self.loaded_cb, task)
+
+    def loaded_cb(self, file, result, task):
+        # here result should be a task...
+        success, contents, etag = file.load_contents_finish(result)
+        if not success:
+            task.return_error(GLib.Error("Can't load file"))
+            return
+        try:
+            text = contents.decode("utf-8")
+        except UnicodeError:
+            task.return_error(GLib.Error("Unable to decode file"))
+            return
+        buffer = self.textview.props.buffer
+        buffer.props.text = text
+        buffer.set_modified(False)  # This also updates the title :D
+        self.file = file
+        task.return_pointer()
+
+    def open_finish(self, task):
+        return task.propagate_pointer()
 
     def save_file(self, callback=None):
         buffer = self.textview.props.buffer
