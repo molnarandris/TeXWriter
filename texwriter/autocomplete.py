@@ -47,12 +47,20 @@ class AutocompletePopover(Gtk.Popover):
                 self.commands.append(cmd)
 
         for cmd in self.commands:
-            row = Gtk.ListBoxRow()
-            row.set_halign(Gtk.Align.START)
-            row.text = cmd['command']
-            row.set_child(Gtk.Label.new(row.text))
-            self.listbox.append(row)
+            if cmd['lowpriority'] == False:
+                self.create_row(cmd)
+        for cmd in self.commands:
+            if cmd['lowpriority'] == True:
+                self.create_row(cmd)
+
         self.selected_row = None
+
+    def create_row(self, cmd):
+        row = Gtk.ListBoxRow()
+        row.set_halign(Gtk.Align.START)
+        row.text = cmd['command']
+        row.set_child(Gtk.Label.new(row.text))
+        self.listbox.append(row)
 
     def key_press_cb(self, controller, keyval, keycode, state):
         if not self.is_active and keyval != Gdk.KEY_backslash: return
