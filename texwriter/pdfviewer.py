@@ -93,11 +93,15 @@ class PdfViewer(Gtk.ScrolledWindow):
         self.scale *= scaling
         return Gdk.EVENT_STOP
 
-    def synctex_fwd(self, width, height, x, y, page):
-        rect = SynctexRect(width, height, x, y, self.scale)
-        overlay = self.get_page(page)
-        overlay.add_overlay(rect)
-        self.scroll_to(page,y)
+    def synctex_fwd(self, rects):
+        for r in rects:
+            w,h,x,y,p = r
+            rect = SynctexRect(w,h,x,y, self.scale)
+            page = self.get_page(p)
+            page.add_overlay(rect)
+
+        _, _, _, y, p = r
+        self.scroll_to(p, y)
 
     def on_synctex_back(self, page, x, y, around, after):
         if self.file is None: return

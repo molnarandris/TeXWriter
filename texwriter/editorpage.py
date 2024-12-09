@@ -20,8 +20,9 @@ class EditorPage(Gtk.ScrolledWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.compile_cancellable = None
-        self.save_cancellable = None
+        self.compile_task = None
+        self.save_task = None
+        self.synctex_task = None
         self.open_task = None
         self.file = None
 
@@ -43,16 +44,21 @@ class EditorPage(Gtk.ScrolledWindow):
         if self.open_task:
             self.open_task.get_cancellable().cancel()
         cancellable = cancellable or Gio.Cancellable()
+        if callback is not None:
+            original_callback = callback
+            def callback(source_object, result, not_user_data):
+                original_callback(source_object, result, user_data)
         task = Gio.Task.new(self, cancellable, callback, user_data)
         self.open_task = task
         if file is None:
-            Gtk.FileDialog().open(self.get_root(), cancellable,
-                                  self.open_dialog_cb, task)
+            dialog = Gtk.FileDialog()
+            dialog.open(self.get_root(), cancellable,
+                        self.open_dialog_cb, task)
         else:
             file.load_contents_async(
-                cancellable,
-                self.loaded_cb,
-                task)
+                cancellable = cancellable,
+                callback = self.loaded_cb,
+                user_data = task)
 
     def open_dialog_cb(self, dialog, response, task):
         try:
@@ -76,74 +82,130 @@ class EditorPage(Gtk.ScrolledWindow):
             return
         buffer = self.textview.props.buffer
         buffer.props.text = text
-        buffer.set_modified(False)  # This also updates the title :D
         self.file = file
-        task.return_pointer()
+        buffer.set_modified(False)  # This also updates the title :D
+        task.return_boolean(True)
 
     def open_finish(self, task):
-        return task.propagate_pointer()
+        self.open_task = None
+        return task.propagate_boolean()
 
-    def save_file(self, callback=None):
+    def save_file_async(self, cancellable, callback, user_data):
+        if self.save_task:
+            assert self.save_task.get_cancellable is not None
+            self.save_task.get_cancellable().cancel()
+        cancellable = cancellable or Gio.Cancellable()
+
+        if callback is not None:
+            original_callback = callback
+            def callback(source_object, result, not_user_data):
+                original_callback(source_object, result, user_data)
+
+        task = Gio.Task.new(self, cancellable, callback, user_data)
+        self.save_task = task
+
         buffer = self.textview.props.buffer
-        start = buffer.get_start_iter()
-        end = buffer.get_end_iter()
-        text = buffer.get_text(start, end, False)
+        start_it = buffer.get_start_iter()
+        end_it = buffer.get_end_iter()
+        text = buffer.get_text(start_it, end_it, False)
         bytes = GLib.Bytes.new(text.encode('utf-8'))
-
-        if self.save_cancellable:
-            self.save_cancellable.cancel()
-        self.save_cancellable = Gio.Cancellable()
 
         self.file.replace_contents_bytes_async(contents=bytes,
                                                etag=None,
                                                make_backup=False,
                                                flags=Gio.FileCreateFlags.NONE,
-                                               cancellable=self.save_cancellable,
-                                               callback=self.save_file_complete,
-                                               user_data=callback)
+                                               cancellable=cancellable,
+                                               callback=self.save_file_cb,
+                                               user_data=task)
 
-    def save_file_complete(self, file, result, callback):
-        self.save_cancellable = None
+    def save_file_cb(self, file, result, task):
         try:
             file.replace_contents_finish(result)
-        except:
-            win = self.props.root
-            win.notify(f"Unable to save {self.display_name}")
-        else:
-            self.textview.get_buffer().set_modified(False)
-            self.file = file
-            self.title = self.display_name
-        finally:
-            if callback: callback()
+        except GLib.Error as err:
+            task.return_error(err)
+            return
+        self.textview.get_buffer().set_modified(False)
+        self.file = file
+        self.title = self.display_name
+        task.return_boolean(True)
+        return
 
-    def compile_async(self, callback):
-        if self.compile_cancellable:
-            self.compile_cancellable.cancel()
-        self.compile_cancellable = Gio.Cancellable()
+    def save_file_finish(self, file, result):
+        self.save_cancellable = None
+
+        if not Gio.Task.is_valid(result, self):
+            err = GLib.Error("Synctex failed",
+                             GLib.Spawn_error_quark(),
+                             GLib.SpawnErrorEnum.FAILED)
+            raise(err)
+        return result.propagate_boolean()
+
+    def compile_async(self, cancellable, callback, user_data=None):
+        if self.compile_task:
+            assert self.compile_task.get_cancellable is not None
+            self.compile_task.get_cancellable().cancel()
+        cancellable = cancellable or Gio.Cancellable()
+
+        original_callback = callback
+        def callback(source_object, result, not_user_data):
+            original_callback(source_object, result, user_data)
+
+        task = Gio.Task.new(self, cancellable, callback, user_data)
+        self.synctex_task = task
+
         pwd = self.file.get_parent().get_path()
         cmd = ['flatpak-spawn', '--host', 'latexmk', '-synctex=1',
                '-interaction=nonstopmode', '-pdf', "-g",
                "--output-directory=" + pwd,
                self.file.get_path()]
-        flags = Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE
+        flags = Gio.SubprocessFlags.STDOUT_SILENCE
+        flags = flags | Gio.SubprocessFlags.STDERR_SILENCE
         proc = Gio.Subprocess.new(cmd, flags)
-        proc.wait_async(cancellable=self.compile_cancellable,
-                        callback=callback,
-                        user_data=self)
+        proc.wait_async(cancellable, self.compile_cb, task)
 
-    def compile_finish(self, source, result):
-        self.compile_cancellable = None
+    def compile_cb(self, source, result, task):
         try:
             source.wait_finish(result)
         except GLib.Error as err:
-            if err.matches(Gio.io_error_quark(), GLib.IOErrorEnum.CANCELLED):
-                logging.warning("Compiling file was cancelled: %s", err.message)
-            else:
-                raise err
+            task.return_error(err)
+            return
         if not source.get_successful():
-            raise Exception("Compilation failed")
+            err = GLib.Error("Compilation failed",
+                             GLib.Spawn_error_quark(),
+                             GLib.SpawnErrorEnum.FAILED)
+            task.return_error(err)
+            return
+        task.return_boolean(True)
 
-    def synctex(self, callback):
+
+    def compile_finish(self, result):
+        self.compile_cancellable = None
+
+        if not Gio.Task.is_valid(result, self):
+            err = GLib.Error("Compilation failed",
+                             GLib.Spawn_error_quark(),
+                             GLib.SpawnErrorEnum.FAILED)
+            raise err
+
+        return result.propagate_boolean()
+
+    def synctex_async(self, cancellable, callback, user_data):
+        if self.synctex_task is not None:
+            assert self.synctex_task.get_cancellable() is not None
+            self.synctex_task.get_cancellable().cancel()
+        cancellable = cancellable or Gio.Cancellable()
+
+        # Python bindings for Gio.Task do not pass user_data to the callback.
+        # So, we need to manually pass those to the callback by using a new
+        # function as callback to `Gio.Task.new()`. This new function will call
+        # the original callback with appropriate user_data.
+        original_callback = callback
+        def callback(source_object, result, not_user_data):
+            original_callback(source_object, result, user_data)
+
+        task = Gio.Task.new(self, cancellable, callback, user_data)
+        self.synctex_task = task
+
         buffer = self.textview.props.buffer
         it = buffer.get_iter_at_mark(buffer.get_insert())
         path = self.file.get_path()
@@ -151,21 +213,46 @@ class EditorPage(Gtk.ScrolledWindow):
         cmd = ['flatpak-spawn', '--host', 'synctex', 'view', '-i', pos, '-o', path]
         flags = Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
         proc = Gio.Subprocess.new(cmd, flags)
-        proc.communicate_utf8_async(None, None, self.synctex_complete, callback)
 
-    def synctex_complete(self, source, result, callback):
-        success, stdout, stderr = source.communicate_utf8_finish(result)
+        proc.communicate_utf8_async(None, cancellable, self.synctex_cb, task)
+
+    def synctex_cb(self, source, result, task):
+        try:
+            success, stdout, stderr = source.communicate_utf8_finish(result)
+        except GLib.Error as err:
+            task.return_error(err)
+            return
+
         if not success:
-            win = self.props.root
-            win.notify("Could not run synctex")
+            err = GLib.Error("Synctex failed",
+                             GLib.Spawn_error_quark(),
+                             GLib.SpawnErrorEnum.FAILED)
+            task.return_error(err)
+            return
+
         record = "Page:(.*)\n.*\n.*\nh:(.*)\nv:(.*)\nW:(.*)\nH:(.*)"
+        rectangles = []
         for match in re.findall(record, stdout):
             page = int(match[0])-1
             x = float(match[1])
             y = float(match[2])
             width = float(match[3])
             height = float(match[4])
-        callback(width, height, x, y, page)
+            rectangles.append((width, height, x, y, page))
+        task.rectangles = rectangles
+        task.return_boolean(True)
+
+    def synctex_finish(self, result):
+        self.synctex_task = None
+
+        if not Gio.Task.is_valid(result, self):
+            err = GLib.Error("Synctex failed",
+                             GLib.Spawn_error_quark(),
+                             GLib.SpawnErrorEnum.FAILED)
+            raise(err)
+
+        result.propagate_boolean()
+        return result.rectangles
 
     @property
     def display_name(self, file=None):

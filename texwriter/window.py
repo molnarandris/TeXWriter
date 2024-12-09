@@ -120,8 +120,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
         # I should call here open_complete
         try:
             editorpage.open_finish(result)
-        except:
-            self.notify("Can't open file")
+        except GLib.Error as err:
+            self.notify("Can't open file: {err.message}")
             return
         result_view = editorpage.result_view
         pdfview = result_view.pdfview
@@ -149,13 +149,13 @@ class TexwriterWindow(Adw.ApplicationWindow):
         self.save(save_as)
 
     def save(self, save_as=False, callback=None):
-        if save_as or not self.editorpage.file:
+        if save_as is True or not self.editorpage.file:
             native = Gtk.FileDialog()
-            native.save(self, None, self.save_complete, callback)
+            native.save(self, None, self.save_dialog_cb, callback)
         else:
-            self.editorpage.save_file(callback)
+            self.editorpage.save_file_async(None, callback, None)
 
-    def save_complete(self, dialog, result, callback):
+    def save_dialog_cb(self, dialog, result, callback):
         try:
             file = dialog.save_finish(result)
         except GLib.Error as err:
@@ -165,7 +165,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.notify(f"Unable to save file: {err.message}")
         else:
             self.editorpage.file = file
-            self.editorpage.save_file(callback)
+            self.editorpage.save_file_async(None, callback, None)
 
     def on_compile_action(self, action, param):
         self.compile()
@@ -177,27 +177,37 @@ class TexwriterWindow(Adw.ApplicationWindow):
         editor = self.editorpage
         # If needs saving, save first, then compile.
         if editor.modified:
-            self.save(callback = self.compile)
+            self.save(callback = lambda *_: self.compile())
             return
-        editor.compile_async(self.compile_complete)
+        editor.compile_async(None, self.compile_complete)
 
-    def compile_complete(self, source, result, editor):
+    def compile_complete(self, editor, result, user_data):
         try:
-            editor.compile_finish(source, result)
-        except:
+            editor.compile_finish(result)
+        except GLib.Error as err:
             display_name = editor.display_name
-            self.notify(f"Compilation of {display_name} failed")
+            self.notify(f"Compilation of {display_name} failed: {err.message}")
             editor.result_view.set_visible_child_name("log")
         else:
             self.load_pdf(editor)
             editor.result_view.set_visible_child_name("pdf")
-            editor.synctex(editor.result_view.pdfview.synctex_fwd)
+            editor.synctex_async(None, self.synctex_complete, None)
         finally:
             self.load_log(editor)
 
     def on_synctex_fwd_action(self, action, param):
         editor = self.editorpage
-        editor.synctex(editor.result_view.pdfview.synctex_fwd)
+        editor.synctex_async(None, self.synctex_complete, None)
+
+    def synctex_complete(self, editor, result, user_data):
+        try:
+            rects = editor.synctex_finish(result)
+        except GLib.Error as err:
+            self.notify(err.message)
+            return
+        editor.result_view.set_visible_child_name("pdf")
+        pdfview = editor.result_view.pdfview
+        pdfview.synctex_fwd(rects)
 
     def scroll_to(self, editor, line, text=None):
         editor.scroll_to(line,text)
