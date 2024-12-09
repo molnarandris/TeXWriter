@@ -44,23 +44,23 @@ class EditorPage(Gtk.ScrolledWindow):
         if self.open_task:
             self.open_task.get_cancellable().cancel()
         cancellable = cancellable or Gio.Cancellable()
+
         if callback is not None:
             original_callback = callback
             def callback(source_object, result, not_user_data):
                 original_callback(source_object, result, user_data)
+
         task = Gio.Task.new(self, cancellable, callback, user_data)
         self.open_task = task
+
         if file is None:
             dialog = Gtk.FileDialog()
-            dialog.open(self.get_root(), cancellable,
-                        self.open_dialog_cb, task)
+            win = self.get_root()
+            dialog.open(win, cancellable, self.open_cb1, task)
         else:
-            file.load_contents_async(
-                cancellable = cancellable,
-                callback = self.loaded_cb,
-                user_data = task)
+            file.load_contents_async(cancellable, self.open_cb2, task)
 
-    def open_dialog_cb(self, dialog, response, task):
+    def open_cb1(self, dialog, response, task):
         try:
             file = dialog.open_finish(response)
         except GLib.Error as err:
@@ -69,26 +69,39 @@ class EditorPage(Gtk.ScrolledWindow):
             cancellable = task.get_cancellable()
             file.load_contents_async(cancellable, self.loaded_cb, task)
 
-    def loaded_cb(self, file, result, task):
-        # here result should be a task...
-        success, contents, etag = file.load_contents_finish(result)
+    def open_cb2(self, file, result, task):
+        try:
+            success, contents, etag = file.load_contents_finish(result)
+        except GLib.Error as err:
+            task.return_error(err)
+            return
+
         if not success:
             task.return_error(GLib.Error("Can't load file"))
             return
+
         try:
             text = contents.decode("utf-8")
         except UnicodeError:
             task.return_error(GLib.Error("Unable to decode file"))
             return
+
         buffer = self.textview.props.buffer
         buffer.props.text = text
         self.file = file
-        buffer.set_modified(False)  # This also updates the title :D
+        buffer.set_modified(False)  # This also updates the title
         task.return_boolean(True)
 
-    def open_finish(self, task):
+    def open_finish(self, result):
         self.open_task = None
-        return task.propagate_boolean()
+
+        if not Gio.Task.is_valid(result, self):
+            err = GLib.Error("Synctex failed",
+                             GLib.Spawn_error_quark(),
+                             GLib.SpawnErrorEnum.FAILED)
+            raise(err)
+
+        return result.propagate_boolean()
 
     def save_file_async(self, cancellable, callback, user_data):
         if self.save_task:
