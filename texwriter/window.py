@@ -153,7 +153,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
             native = Gtk.FileDialog()
             native.save(self, None, self.save_dialog_cb, callback)
         else:
-            self.editorpage.save_file_async(None, callback, None)
+            self.editorpage.save_file_async(None, self.save_complete, callback)
 
     def save_dialog_cb(self, dialog, result, callback):
         try:
@@ -165,7 +165,18 @@ class TexwriterWindow(Adw.ApplicationWindow):
                 self.notify(f"Unable to save file: {err.message}")
         else:
             self.editorpage.file = file
-            self.editorpage.save_file_async(None, callback, None)
+            self.editorpage.save_file_async(None, self.save_complete, callback)
+
+    def save_complete(self, editorpage, result, callback):
+        try:
+            editorpage.save_file_finish(result)
+        except GLib.Error as err:
+            self.notify(f"Unable to save file: {err.message}")
+
+        if callback is not None:
+            callback()
+
+
 
     def on_compile_action(self, action, param):
         self.compile()
@@ -177,7 +188,7 @@ class TexwriterWindow(Adw.ApplicationWindow):
         editor = self.editorpage
         # If needs saving, save first, then compile.
         if editor.modified:
-            self.save(callback = lambda *_: self.compile())
+            self.save(callback=self.compile)
             return
         editor.compile_async(None, self.compile_complete)
 

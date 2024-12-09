@@ -143,7 +143,7 @@ class EditorPage(Gtk.ScrolledWindow):
         task.return_boolean(True)
         return
 
-    def save_file_finish(self, file, result):
+    def save_file_finish(self, result):
         self.save_cancellable = None
 
         if not Gio.Task.is_valid(result, self):
