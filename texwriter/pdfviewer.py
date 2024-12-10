@@ -13,7 +13,7 @@ from gi.repository import Poppler
 logger = logging.getLogger("Texwriter")
 
 
-class PdfViewer(Gtk.ScrolledWindow):
+class PdfViewer(Gtk.Box):
     __gtype_name__ = 'PdfViewer'
 
     __gsignals__ = {
@@ -22,15 +22,13 @@ class PdfViewer(Gtk.ScrolledWindow):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.box = Gtk.Box()
-        self.box.set_halign(Gtk.Align.CENTER)
-        self.box.set_orientation(Gtk.Orientation.VERTICAL)
-        self.box.set_spacing(20)
-        self.box.set_margin_start(20)
-        self.box.set_margin_end(20)
-        self.box.set_margin_top(10)
-        self.box.set_margin_bottom(10)
-        self.set_child(self.box)
+        self.set_halign(Gtk.Align.CENTER)
+        self.set_orientation(Gtk.Orientation.VERTICAL)
+        self.set_spacing(20)
+        self.set_margin_start(20)
+        self.set_margin_end(20)
+        self.set_margin_top(10)
+        self.set_margin_bottom(10)
 
         self._scale = 1
         self.file = None
@@ -40,7 +38,7 @@ class PdfViewer(Gtk.ScrolledWindow):
         controller.connect("scroll", self.on_scroll)
         controller.set_propagation_phase(Gtk.PropagationPhase.BUBBLE)
         controller.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)
-        self.box.add_controller(controller)
+        self.add_controller(controller)
 
     @GObject.Property(type=float)
     def scale(self):
@@ -50,20 +48,20 @@ class PdfViewer(Gtk.ScrolledWindow):
     @scale.setter
     def scale(self, value):
         self._scale = value
-        for child in self.box:
+        for child in self:
             child.get_child().set_scale(value)
 
     def load_file(self, file):
-        child = self.box.get_first_child()
+        child = self.get_first_child()
         while child is not None:
-            self.box.remove(child)
+            self.remove(child)
             page = child.get_child()
             page.unparent()
             del page.poppler_page
             del page
             child.set_child(None)
             del child
-            child = self.box.get_first_child()
+            child = self.get_first_child()
         try:
             poppler_doc = Poppler.Document.new_from_gfile(file, None, None)
             self.file = file
@@ -72,15 +70,15 @@ class PdfViewer(Gtk.ScrolledWindow):
                 page.connect("synctex-back", self.on_synctex_back)
                 overlay = Gtk.Overlay()
                 overlay.set_child(page)
-                self.box.append(overlay)
+                self.append(overlay)
             del poppler_doc
-        except:
-            logger.warning(f"Opening the following pdf failed: {file.get_path()}")
+        except GLib.Error as err:
+            logger.warning(f"Opening the following pdf failed: {file.get_path()}", err.message)
 
     def on_scroll(self, controller, dx, dy):
         if not controller.get_current_event_state() == Gdk.ModifierType.CONTROL_MASK:
             return Gdk.EVENT_PROPAGATE
-        viewport = self.box.get_parent()
+        viewport = self.get_parent()
         hadj = viewport.get_hadjustment()
         vadj = viewport.get_vadjustment()
         h = hadj.get_value()
@@ -128,7 +126,7 @@ class PdfViewer(Gtk.ScrolledWindow):
             logger.warning("Synctex back failed")
 
     def get_page(self, n):
-        child = self.box.get_first_child()
+        child = self.get_first_child()
         for i in range(n):
             child = child.get_next_sibling()
         return child
@@ -138,7 +136,7 @@ class PdfViewer(Gtk.ScrolledWindow):
         point = Graphene.Point()
         point.init(0, y)
         _, p = page.compute_point(self.box, point)
-        viewport = self.box.get_parent()
+        viewport = self.get_parent()
         vadj = viewport.get_vadjustment()
         vadj.set_value(p.y-vadj.get_page_size()*0.302)
 

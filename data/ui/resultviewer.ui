@@ -6,7 +6,11 @@
       <object class="GtkStackPage">
         <property name="name">pdf</property>
         <property name="child">
-          <object class="PdfViewer" id="pdfview">
+          <object class="GtkScrolledWindow">
+            <child>
+              <object class="PdfViewer" id="pdfview">
+              </object>
+            </child>
           </object>
         </property>
       </object>
