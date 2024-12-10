@@ -36,6 +36,7 @@ class PdfViewer(Gtk.Box):
 
         controller = Gtk.EventControllerScroll()
         controller.connect("scroll", self.on_scroll)
+        controller.connect("scroll-end", self.on_scroll_end)
         controller.set_propagation_phase(Gtk.PropagationPhase.BUBBLE)
         controller.set_flags(Gtk.EventControllerScrollFlags.VERTICAL)
         self.add_controller(controller)
@@ -90,6 +91,13 @@ class PdfViewer(Gtk.Box):
         vadj.set_value(v*scaling)
         self.scale *= scaling
         return Gdk.EVENT_STOP
+
+    def on_scroll_end(self, controller):
+        if not controller.get_current_event_state() == Gdk.ModifierType.CONTROL_MASK:
+            return Gdk.EVENT_PROPAGATE
+        scroll = self.get_parent().get_parent()
+        scroll.set_kinetic_scrolling(False)
+        scroll.set_kinetic_scrolling(True)
 
     def synctex_fwd(self, rects):
         for r in rects:
