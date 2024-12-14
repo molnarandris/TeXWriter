@@ -4,8 +4,6 @@
   <command name="\autopageref*{•}" text="\autopageref*{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="label###" />
   <command name="\autoref{•}" text="\autoref{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="label###" />
   <command name="\autoref*{•}" text="\autoref*{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="label###" />
-  <command name="\begin{Form}" text="\begin{Form}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{Form}[•]" text="\begin{Form}[•]" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="options###" />
   <command name="\belowpdfbookmark{•}{•}" text="\belowpdfbookmark{•}{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="text###name###" />
   <command name="\CheckBox[•]{•}" text="\CheckBox[•]{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="parameters###label###" />
   <command name="\ChoiceMenu[•]{•}{•}" text="\ChoiceMenu[•]{•}{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="parameters###label###choices###" />
@@ -21,7 +19,6 @@
   <command name="\DefaultWidthofReset" text="\DefaultWidthofReset" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="True" description="" dotlabels="" />
   <command name="\DefaultWidthofSubmit" text="\DefaultWidthofSubmit" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="True" description="" dotlabels="" />
   <command name="\DefaultWidthofText" text="\DefaultWidthofText" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="True" description="" dotlabels="" />
-  <command name="\end{Form}" text="\end{Form}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
   <command name="\href{•}{•}" text="\href{•}{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="URL###text###" />
   <command name="\href[•]{•}{•}" text="\href[•]{•}{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="options###URL###text###" />
   <command name="\hyperbaseurl{•}" text="\hyperbaseurl{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="URL###" />
@@ -58,4 +55,5 @@
   <command name="\TextField[•]{•}" text="\TextField[•]{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="parameters###label###" />
   <command name="\thispdfpagelabel" text="\thispdfpagelabel" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
   <command name="\url{•}" text="\url{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="URL###" />
+  <environment name="\begin{Form}" text="\begin{Form}" arg="0" optional="1" star="False" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
 </commands>

@@ -2,39 +2,6 @@
   <command name="\allowdisplaybreaks" text="\allowdisplaybreaks" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
   <command name="\AmS" text="\AmS" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
   <command name="\AmSfont" text="\AmSfont" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{align}" text="\begin{align}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{align*}" text="\begin{align*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{alignat}{•}" text="\begin{alignat}{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="ncols###" />
-  <command name="\begin{alignat}[•]{•}" text="\begin{alignat}[•]{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="alignment###ncols###" />
-  <command name="\begin{alignat*}{•}" text="\begin{alignat*}{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="ncols###" />
-  <command name="\begin{alignat*}[•]{•}" text="\begin{alignat*}[•]{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="alignment###ncols###" />
-  <command name="\begin{aligned}" text="\begin{aligned}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{aligned}[•]" text="\begin{aligned}[•]" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="alignment###" />
-  <command name="\begin{alignedat}{•}" text="\begin{alignedat}{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="ncols###" />
-  <command name="\begin{bmatrix}" text="\begin{bmatrix}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{Bmatrix}" text="\begin{Bmatrix}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{cases}" text="\begin{cases}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{equation*}" text="\begin{equation*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{flalign}" text="\begin{flalign}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{flalign*}" text="\begin{flalign*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{gather}" text="\begin{gather}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{gather*}" text="\begin{gather*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{gathered}" text="\begin{gathered}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{gathered}[•]" text="\begin{gathered}[•]" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="alignment###" />
-  <command name="\begin{matrix}" text="\begin{matrix}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{multline}" text="\begin{multline}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{multline*}" text="\begin{multline*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{pmatrix}" text="\begin{pmatrix}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{smallmatrix}" text="\begin{smallmatrix}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{split}" text="\begin{split}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{subarray}" text="\begin{subarray}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{subarray}[•]" text="\begin{subarray}[•]" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="align###" />
-  <command name="\begin{subequations}" text="\begin{subequations}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{vmatrix}" text="\begin{vmatrix}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{Vmatrix}" text="\begin{Vmatrix}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\begin{xalignat}" text="\begin{xalignat}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="True" description="" dotlabels="" />
-  <command name="\begin{xalignat*}" text="\begin{xalignat*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="True" description="" dotlabels="" />
-  <command name="\begin{xxalignat}" text="\begin{xxalignat}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="True" description="" dotlabels="" />
   <command name="\binom{•}{•}" text="\binom{•}{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="above###below###" />
   <command name="\boldsymbol{•}" text="\boldsymbol{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="argument###" />
   <command name="\boxed{•}" text="\boxed{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="argument###" />
@@ -53,34 +20,6 @@
   <command name="\dotsi" text="\dotsi" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
   <command name="\dotsm" text="\dotsm" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
   <command name="\dotso" text="\dotso" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{align}" text="\end{align}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{align*}" text="\end{align*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{alignat}" text="\end{alignat}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{alignat*}" text="\end{alignat*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{aligned}" text="\end{aligned}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{alignedat}" text="\end{alignedat}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{bmatrix}" text="\end{bmatrix}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{Bmatrix}" text="\end{Bmatrix}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{cases}" text="\end{cases}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{equation*}" text="\end{equation*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{flalign}" text="\end{flalign}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{flalign*}" text="\end{flalign*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{gather}" text="\end{gather}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{gather*}" text="\end{gather*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{gathered}" text="\end{gathered}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{matrix}" text="\end{matrix}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{multline}" text="\end{multline}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{multline*}" text="\end{multline*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{pmatrix}" text="\end{pmatrix}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{smallmatrix}" text="\end{smallmatrix}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{split}" text="\end{split}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{subarray}" text="\end{subarray}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{subequations}" text="\end{subequations}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{vmatrix}" text="\end{vmatrix}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{Vmatrix}" text="\end{Vmatrix}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{xalignat}" text="\end{xalignat}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{xalignat*}" text="\end{xalignat*}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
-  <command name="\end{xxalignat}" text="\end{xxalignat}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
   <command name="\eqref{•}" text="\eqref{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="label###" />
   <command name="\hdotsfor{•}" text="\hdotsfor{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="columns###" />
   <command name="\hdotsfor[•]{•}" text="\hdotsfor[•]{•}" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="multiplier###columns###" />
@@ -139,4 +78,28 @@
   <command name="\xleftarrow[•]{•}" text="\xleftarrow[•]{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="subscript###superscript###" />
   <command name="\xrightarrow{•}" text="\xrightarrow{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="superscript###" />
   <command name="\xrightarrow[•]{•}" text="\xrightarrow[•]{•}" onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="subscript###superscript###" />
+
+  <environment name="align" text="align"  arg="0" optional="0" star="True" onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="alignat" text="alignat" arg="1" optional="1" star="True"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="ncols###" />
+  <environment name="aligned" text="aligned" arg="0" optional="1" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="alignedat" text="alignedat" arg="1" optional="0" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="ncols###" />
+  <environment name="bmatrix" text="bmatrix" arg="0" optional="0" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="Bmatrix" text="Bmatrix" arg="0" optional="0" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="cases" text="cases" arg="0" optional="0" star="False"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="equation" text="equation" arg="0" optional="0" star="True"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="flalign" text="flalign" arg="0" optional="0" star="True"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="gather" text="gather" arg="0" optional="0" star="True"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="gathered" text="gathered" arg="0" optional="1" star="False"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="matrix" text="matrix" arg="0" optional="0" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="multline" text="multline" arg="0" optional="0" star="True"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="pmatrix" text="pmatrix" arg="0" optional="0" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="smallmatrix" text="smallmatrix" arg="0" optional="0" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="split" text="split" arg="0" optional="0" star="False"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="subarray" text="subarray" arg="0" optional="1" star="False"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="subequations" text="subequations" arg="0" optional="0" star="False"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="vmatrix" text="vmatrix" arg="0" optional="0" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="Vmatrix" text="Vmatrix" arg="0" optional="0" star="False"  onlymath="True" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="False" description="" dotlabels="" />
+  <environment name="xalignat" text="xalignat" arg="0" optional="0" star="True"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="True" description="" dotlabels="" />
+  <environment name="xxalignat" text="xxalignat" arg="0" optional="0" star="False"  onlymath="False" onlytext="False" onlytabular="False" onlytabbing="False" lowpriority="True" description="" dotlabels="" />
+
 </commands>

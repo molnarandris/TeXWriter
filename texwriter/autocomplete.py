@@ -39,13 +39,24 @@ class AutocompletePopover(Gtk.Popover):
             text = contents[1].decode('utf-8')
             root = ET.fromstring(text)
             for child in root:
-                a = child.attrib
-                cmd = {'package': pkg,
-                       'command': a['text'],
-                       'description': _(a['description']),
-                       'lowpriority': True if a['lowpriority'] == "True" else False,
-                       'dotlabels': a['dotlabels']}
-                self.commands.append(cmd)
+                if child.tag == "command":
+                    a = child.attrib
+                    cmd = {'package': pkg,
+                           'command': a['text'],
+                           'text': a['name'],
+                           'description': _(a['description']),
+                           'lowpriority': True if a['lowpriority'] == "True" else False,
+                           'dotlabels': a['dotlabels']}
+                    self.commands.append(cmd)
+                if child.tag == "environment":
+                    a = child.attrib
+                    cmd = {'package': pkg,
+                           'command': "\\begin{" + a['text'] + "}\n\\end{"+ a['text'] +"}",
+                           'text': "\\begin{" + a['name'] + "}...\\end{"+ a['name'] +"}",
+                           'description': _(a['description']),
+                           'lowpriority': True if a['lowpriority'] == "True" else False,
+                           'dotlabels': a['dotlabels']}
+                    self.commands.append(cmd)
 
         for cmd in self.commands:
             if cmd['lowpriority'] == False:
@@ -59,7 +70,8 @@ class AutocompletePopover(Gtk.Popover):
     def create_row(self, cmd):
         row = Gtk.ListBoxRow()
         row.set_halign(Gtk.Align.START)
-        row.text = cmd['command']
+        row.text = cmd['text']
+        row.command = cmd['command']
         row.set_child(Gtk.Label.new(row.text))
         self.listbox.append(row)
 
@@ -123,7 +135,7 @@ class AutocompletePopover(Gtk.Popover):
         row = self.listbox.get_selected_row()
         buffer = self.get_parent().get_buffer()
         text = self.get_typed_text()
-        buffer.insert_at_cursor(row.text.lstrip(text))
+        buffer.insert_at_cursor(row.command.lstrip(text))
         self.deactivate()
 
     def get_typed_text(self):
