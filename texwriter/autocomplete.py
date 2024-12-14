@@ -16,6 +16,7 @@ class AutocompletePopover(Gtk.Popover):
         scroll = Gtk.ScrolledWindow()
         scroll.set_child(self.listbox)
         scroll.set_propagate_natural_width(True)
+        scroll.set_propagate_natural_height(True)
         self.set_child(scroll)
         self.commands = []
 
@@ -142,13 +143,25 @@ class AutocompletePopover(Gtk.Popover):
 
     def select_next_row(self):
         n = self.listbox.get_selected_row().get_index()
-        row = self.listbox.get_row_at_index(n+1)
-        if row: self.listbox.select_row(row)
+        while True:
+            n += 1
+            row = self.listbox.get_row_at_index(n)
+            if row is None:
+                return
+            if self.filter_func(row) is True:
+                break
+        self.listbox.select_row(row)
 
     def select_prev_row(self):
         n = self.listbox.get_selected_row().get_index()
-        row = self.listbox.get_row_at_index(n-1)
-        if row: self.listbox.select_row(row)
+        while True:
+            n -= 1
+            row = self.listbox.get_row_at_index(n)
+            if row is None:
+                return
+            if self.filter_func(row) is True:
+                break
+        self.listbox.select_row(row)
 
     def button_release_cb(self, window, n, x, y):
         if not self.is_active: return
