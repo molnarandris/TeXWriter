@@ -27,6 +27,7 @@ class AutocompletePopover(Gtk.Popover):
         controller = Gtk.EventControllerKey()
         controller.connect("key_released", self.key_release_cb)
         parent.add_controller(controller)
+        controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
 
         controller = Gtk.GestureClick()
         controller.connect("released", self.button_release_cb)
@@ -76,25 +77,26 @@ class AutocompletePopover(Gtk.Popover):
         self.listbox.append(row)
 
     def key_press_cb(self, controller, keyval, keycode, state):
-        if not self.is_active and keyval != Gdk.KEY_backslash: return
+        if not self.is_active and keyval != Gdk.KEY_backslash:
+            return Gdk.EVENT_PROPAGATE
         match keyval:
             case Gdk.KEY_backslash:
                 self.activate()
-                return False
+                return Gdk.EVENT_PROPAGATE
             case Gdk.KEY_Escape | Gdk.KEY_space:
                 self.deactivate()
-                return False
+                return Gdk.EVENT_PROPAGATE
             case Gdk.KEY_Return | Gdk.KEY_Tab:
                 self.activate_selected_row()
-                return True
+                return Gdk.EVENT_STOP
             case Gdk.KEY_Down:
                 self.select_next_row()
-                return True
+                return Gdk.EVENT_STOP
             case Gdk.KEY_Up:
                 self.select_prev_row()
-                return True
+                return Gdk.EVENT_STOP
             case _:
-                return False
+                return Gdk.EVENT_PROPAGATE
 
     def key_release_cb(self, controller, keyval, keycode, state):
         if keyval in [Gdk.KEY_Down, Gdk.KEY_Down]:
