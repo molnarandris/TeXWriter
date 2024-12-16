@@ -4,34 +4,41 @@ from gi.repository import Gio
 from gi.repository import GObject
 import xml.etree.ElementTree as ET
 
+
 class AutocompletePopover(Gtk.Popover):
     __gtype_name__ = 'AutocompletePopover'
 
-    def __init__(self, parent):
+    def __init__(self, textview):
         super().__init__()
-        self.set_parent(parent)
-        self.set_autohide(False)
+        self.set_parent(textview)
+        self.set_autohide(True)
         self.is_active = False
-        self.listbox = Gtk.ListBox()
+        listbox = Gtk.ListBox()
+        listbox.set_selection_mode(Gtk.SelectionMode.BROWSE)
         scroll = Gtk.ScrolledWindow()
-        scroll.set_child(self.listbox)
+        scroll.set_child(listbox)
         scroll.set_propagate_natural_width(True)
         scroll.set_propagate_natural_height(True)
         self.set_child(scroll)
         self.commands = []
+        self.textview = textview
+
+        listbox.connect("row-activated", self.row_activated_cb)
 
         controller = Gtk.EventControllerKey()
+        controller.set_propagation_phase(Gtk.PropagationPhase.BUBBLE)
+        controller.connect("key_pressed", self.textview_key_press_cb)
+        textview.add_controller(controller)
+
+        controller = Gtk.EventControllerKey.new()
+        controller.set_propagation_phase(Gtk.PropagationPhase.BUBBLE)
         controller.connect("key_pressed", self.key_press_cb)
-        parent.add_controller(controller)
-
-        controller = Gtk.EventControllerKey()
         controller.connect("key_released", self.key_release_cb)
-        parent.add_controller(controller)
-        controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        self.add_controller(controller)
 
-        controller = Gtk.GestureClick()
-        controller.connect("released", self.button_release_cb)
-        #parent.get_root().add_controller(controller)
+        self.connect("closed", self.closed_cb)
+
+        self.listbox = listbox
 
         packages = ["tex", "latex-document", "amsmath", "amsthm"]
         for pkg in packages:
@@ -60,13 +67,18 @@ class AutocompletePopover(Gtk.Popover):
                     self.commands.append(cmd)
 
         for cmd in self.commands:
-            if cmd['lowpriority'] == False:
-                self.create_row(cmd)
-        for cmd in self.commands:
-            if cmd['lowpriority'] == True:
+            if cmd['lowpriority'] is False:
                 self.create_row(cmd)
 
-        self.selected_row = None
+        for cmd in self.commands:
+            if cmd['lowpriority'] is True:
+                self.create_row(cmd)
+
+    def closed_cb(self, user_data):
+        buffer = self.textview.get_buffer()
+        mark = buffer.get_mark("autocomplete")
+        mark is not None and buffer.delete_mark(mark)
+        self.is_active = False
 
     def create_row(self, cmd):
         row = Gtk.ListBoxRow()
@@ -76,72 +88,69 @@ class AutocompletePopover(Gtk.Popover):
         row.set_child(Gtk.Label.new(row.text))
         self.listbox.append(row)
 
+    def textview_key_press_cb(self, controller, keyval, keycode, state):
+        if not self.is_active and keyval == Gdk.KEY_backslash:
+            self.activate()
+        return Gdk.EVENT_PROPAGATE
+
     def key_press_cb(self, controller, keyval, keycode, state):
         if not self.is_active and keyval != Gdk.KEY_backslash:
             return Gdk.EVENT_PROPAGATE
         match keyval:
-            case Gdk.KEY_backslash:
-                self.activate()
-                return Gdk.EVENT_PROPAGATE
-            case Gdk.KEY_Escape | Gdk.KEY_space:
-                self.deactivate()
-                return Gdk.EVENT_PROPAGATE
-            case Gdk.KEY_Return | Gdk.KEY_Tab:
-                self.activate_selected_row()
-                return Gdk.EVENT_STOP
-            case Gdk.KEY_Down:
-                self.select_next_row()
-                return Gdk.EVENT_STOP
-            case Gdk.KEY_Up:
-                self.select_prev_row()
+            case Gdk.KEY_Escape:
+                self.popdown()
+            case Gdk.KEY_Tab | Gdk.KEY_Return:
+                row = self.listbox.get_selected_row()
+                row.emit("activate")
                 return Gdk.EVENT_STOP
             case _:
-                return Gdk.EVENT_PROPAGATE
+                if controller.forward(self.listbox):
+                    return Gdk.EVENT_STOP
+                else:
+                    controller.forward(self.textview)
+                    self.listbox.invalidate_filter()
+                    self.update_position()
+                    idx = 0
+                    row = self.listbox.get_row_at_index(idx)
+                    while not self.filter_func(row):
+                        idx += 1
+                        row = self.listbox.get_row_at_index(idx)
+                        if row is None:
+                            break
+                    self.listbox.select_row(row)
+                    if row is None:
+                        self.popdown()
+                    else:
+                        row.grab_focus()
+                    return Gdk.EVENT_STOP
+        return Gdk.EVENT_PROPAGATE
 
     def key_release_cb(self, controller, keyval, keycode, state):
-        if keyval in [Gdk.KEY_Down, Gdk.KEY_Down]:
+        if not self.is_active and keyval != Gdk.KEY_backslash:
             return
-        if not self.is_active: return
-        self.listbox.invalidate_filter()
-        self.listbox.set_filter_func(self.filter_func)
-        empty = True
-        for row in self.listbox:
-            if self.filter_func(row):
-                self.listbox.select_row(row)
-                empty = False
-                break
-        if empty:
-            self.deactivate()
-        else:
-            self.update_position()
+        controller.forward(self.listbox)
 
     def activate(self):
+        mark = Gtk.TextMark.new("autocomplete", left_gravity=True)
+        buffer = self.get_parent().get_buffer()
+        it = buffer.get_iter_at_mark(buffer.get_insert())
+        buffer.add_mark(mark, it)
+        self.listbox.set_filter_func(self.filter_func)
         self.update_position()
         self.popup()
         row = self.listbox.get_row_at_index(0)
         self.listbox.select_row(row)
+        row.grab_focus()
         self.is_active = True
-        buffer = self.get_parent().get_buffer()
-        it = buffer.get_iter_at_mark(buffer.get_insert())
-        mark = Gtk.TextMark.new("autocomplete", left_gravity=True)
-        buffer.add_mark(mark,it)
 
-    def deactivate(self):
-        self.popdown()
-        buffer = self.get_parent().get_buffer()
-        mark = buffer.get_mark("autocomplete")
-        buffer.delete_mark(mark)
-        self.is_active = False
-
-    def activate_selected_row(self):
-        row = self.listbox.get_selected_row()
-        buffer = self.get_parent().get_buffer()
+    def row_activated_cb(self, listbox, row):
+        buffer = self.textview.get_buffer()
         text = self.get_typed_text()
         buffer.insert_at_cursor(row.command.lstrip(text))
-        self.deactivate()
+        self.popdown()
 
     def get_typed_text(self):
-        buffer = self.get_parent().get_buffer()
+        buffer = self.textview.get_buffer()
         mark = buffer.get_mark("autocomplete")
         start_it = buffer.get_iter_at_mark(mark)
         end_it = buffer.get_iter_at_mark(buffer.get_insert())
@@ -149,37 +158,13 @@ class AutocompletePopover(Gtk.Popover):
         return text
 
     def filter_func(self, row):
-        text = self.get_typed_text()
-        if row.text.find(text) == -1:
+        if row is None:
             return False
-        else:
-            return True
-
-    def select_next_row(self):
-        n = self.listbox.get_selected_row().get_index()
-        while True:
-            n += 1
-            row = self.listbox.get_row_at_index(n)
-            if row is None:
-                return
-            if self.filter_func(row) is True:
-                break
-        self.listbox.select_row(row)
-
-    def select_prev_row(self):
-        n = self.listbox.get_selected_row().get_index()
-        while True:
-            n -= 1
-            row = self.listbox.get_row_at_index(n)
-            if row is None:
-                return
-            if self.filter_func(row) is True:
-                break
-        self.listbox.select_row(row)
+        text = self.get_typed_text()
+        return row.text.find(text) != -1
 
     def button_release_cb(self, window, n, x, y):
-        if not self.is_active: return
-        self.deactivate()
+        self.is_active and self.deactivate()
 
     def update_position(self):
         textview = self.get_parent()
