@@ -98,7 +98,7 @@ class AutocompletePopover(Gtk.Popover):
             return Gdk.EVENT_PROPAGATE
         match keyval:
             case Gdk.KEY_Escape:
-                self.deactivate()
+                self.popdown()
             case Gdk.KEY_Tab | Gdk.KEY_Return:
                 row = self.listbox.get_selected_row()
                 row.emit("activate")
