@@ -74,7 +74,7 @@ class PdfViewer(Gtk.Box):
                 self.append(overlay)
             del poppler_doc
         except GLib.Error as err:
-            logger.warning(f"Opening the following pdf failed: {file.get_path()}", err.message)
+            logger.warning(err)
 
     def on_scroll(self, controller, dx, dy):
         if not controller.get_current_event_state() == Gdk.ModifierType.CONTROL_MASK:
@@ -104,7 +104,7 @@ class PdfViewer(Gtk.Box):
             w,h,x,y,p = r
             rect = SynctexRect(w,h,x,y, self.scale)
             page = self.get_page(p)
-            page.add_overlay(rect)
+            page is not None and page.add_overlay(rect)
 
         _, _, _, y, p = r
         self.scroll_to(p, y)
@@ -140,7 +140,10 @@ class PdfViewer(Gtk.Box):
         return child
 
     def scroll_to(self, page_num, y):
-        page = self.get_page(page_num).get_child()
+        if self.get_page(page_num) is not None:
+            page = self.get_page(page_num).get_child()
+        else:
+            return
         point = Graphene.Point()
         point.init(0, y)
         _, p = page.compute_point(self, point)

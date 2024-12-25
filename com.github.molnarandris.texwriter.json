@@ -25,28 +25,28 @@
     ],
     "modules" : [
         {
-            "name": "popplerdata",
-            "no-autogen": true,
-            "make-install-args": [
+            "name" : "popplerdata",
+            "no-autogen" : true,
+            "make-install-args" : [
                 "prefix=/app"
             ],
-            "sources": [
+            "sources" : [
                 {
-                    "type": "archive",
-                    "url": "https://poppler.freedesktop.org/poppler-data-0.4.12.tar.gz",
-                    "sha256": "c835b640a40ce357e1b83666aabd95edffa24ddddd49b8daff63adb851cdab74",
-                    "x-checker-data": {
-                        "type": "anitya",
-                        "project-id": 3687,
-                        "url-template": "https://poppler.freedesktop.org/poppler-data-$version.tar.gz"
+                    "type" : "archive",
+                    "url" : "https://poppler.freedesktop.org/poppler-data-0.4.12.tar.gz",
+                    "sha256" : "c835b640a40ce357e1b83666aabd95edffa24ddddd49b8daff63adb851cdab74",
+                    "x-checker-data" : {
+                        "type" : "anitya",
+                        "project-id" : 3687,
+                        "url-template" : "https://poppler.freedesktop.org/poppler-data-$version.tar.gz"
                     }
                 }
             ]
         },
         {
-            "name": "poppler",
-            "buildsystem": "cmake-ninja",
-            "config-opts": [
+            "name" : "poppler",
+            "buildsystem" : "cmake-ninja",
+            "config-opts" : [
                 "-DCMAKE_INSTALL_LIBDIR=/app/lib",
                 "-DCMAKE_INSTALL_INCLUDEDIR=/app/include",
                 "-DBUILD_GTK_TESTS=OFF",
@@ -58,18 +58,18 @@
                 "-DENABLE_QT5=OFF",
                 "-DENABLE_QT6=OFF"
             ],
-            "cleanup": [
+            "cleanup" : [
                 "/bin"
             ],
-            "sources": [
+            "sources" : [
                 {
-                    "type": "archive",
-                    "url": "https://poppler.freedesktop.org/poppler-24.05.0.tar.xz",
-                    "sha256": "d8c5eb30b50285ad9f0af8c6335cc2d3b9597fca475cbc2598a5479fa379f779",
-                    "x-checker-data": {
-                        "type": "anitya",
-                        "project-id": 3686,
-                        "url-template": "https://poppler.freedesktop.org/poppler-$version.tar.xz"
+                    "type" : "archive",
+                    "url" : "https://poppler.freedesktop.org/poppler-24.05.0.tar.xz",
+                    "sha256" : "d8c5eb30b50285ad9f0af8c6335cc2d3b9597fca475cbc2598a5479fa379f779",
+                    "x-checker-data" : {
+                        "type" : "anitya",
+                        "project-id" : 3686,
+                        "url-template" : "https://poppler.freedesktop.org/poppler-$version.tar.xz"
                     }
                 }
             ]
@@ -83,7 +83,13 @@
                     "type" : "git",
                     "url" : "file:///home/molnar/Programming"
                 }
+            ],
+            "config-opts" : [
+                "--libdir=lib"
             ]
         }
-    ]
+    ],
+    "build-options" : {
+        "env" : {        }
+    }
 }

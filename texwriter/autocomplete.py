@@ -9,7 +9,7 @@ class AutocompletePopover(Gtk.Popover):
     __gtype_name__ = 'AutocompletePopover'
 
     def __init__(self, textview):
-       super().__init__()
+        super().__init__()
         self.set_parent(textview)
         self.set_autohide(True)
         self.is_active = False

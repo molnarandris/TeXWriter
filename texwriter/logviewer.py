@@ -2,6 +2,7 @@ from gi.repository import Gtk
 from gi.repository import Gio
 from gi.repository import Adw
 from gi.repository import GObject
+from gi.repository import GLib
 import logging
 import re
 
@@ -28,7 +29,12 @@ class LogViewer(Gtk.ListBox):
         file.load_contents_async(None, self.load_file_complete)
 
     def load_file_complete(self, file, result):
-        success, contents, msg = file.load_contents_finish(result)
+        try:
+            success, contents, msg = file.load_contents_finish(result)
+        except GLib.Error as err:
+            logger.warning(err)
+            return
+
         if not success:
             path = file.peek_path()
             toast = Adw.Toast.new("Unable to load log file")

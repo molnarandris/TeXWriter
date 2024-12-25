@@ -79,7 +79,7 @@ class EditorPage(Gtk.ScrolledWindow):
             task.return_error(err)
         else:
             cancellable = task.get_cancellable()
-            file.load_contents_async(cancellable, self.loaded_cb, task)
+            file.load_contents_async(cancellable, self.open_cb2, task)
 
     def open_cb2(self, file, result, task):
         try:
@@ -154,7 +154,6 @@ class EditorPage(Gtk.ScrolledWindow):
         start_it = buffer.get_iter_at_mark(insert_start)
         buffer.delete_mark(insert_start)
         end_it = location
-        print(buffer.get_text(start_it,end_it,False))
         self.parse(start_it, end_it)
 
     def open_finish(self, result):
