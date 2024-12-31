@@ -28,6 +28,7 @@ texwriter_sources = [
   'autocomplete.py',
   'editorpage.py',
   'resultviewer.py',
+  'parser.py',
 ]
 
 install_data(texwriter_sources, install_dir: moduledir)
