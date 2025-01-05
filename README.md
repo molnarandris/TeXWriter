@@ -21,8 +21,5 @@ Planned features:
  - Good inclusion mechanisms: drag-and-drop of pictures
  - TikZ drawing?
  - Bibtex support???
-<<<<<<< HEAD
-=======
 
 Not using Sourceview's syntax highlighting as a parser is needed anyway....
->>>>>>> 7baf270 (Update README)
