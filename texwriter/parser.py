@@ -18,8 +18,35 @@ class LatexParser:
 
         self.buffer = buffer
 
+        self.in_comment = False
+        self.in_command = False
+        self.in_inline_math = False
+        self.at_command_end = False
+
     def before_buffer_insert_text(self, buffer, location, text, len):
         buffer.create_mark("insert-start", location, True)
+
+        self.in_command = False
+        self.in_inline_math = False
+        self.in_comment = False
+        self.at_command_end = False
+
+        on_tags = location.get_toggled_tags(toggled_on=True)
+        off_tags = location.get_toggled_tags(toggled_on=False)
+        in_tags =  [t for t in location.get_tags() if t not in on_tags]
+
+        for tag in in_tags:
+            match tag.props.name:
+                case "command":
+                    self.in_command = True
+                case "inline_math":
+                    self.in_inline_math = True
+                case "comment":
+                    self.in_comment = True
+
+        for tag in off_tags:
+            if tag.props.name == "command":
+                self.at_command_end = True
 
     def after_buffer_insert_text(self, buffer, location, text, len):
         insert_start = buffer.get_mark("insert-start")
@@ -28,36 +55,55 @@ class LatexParser:
         end_it = location
         self.parse(start_it, end_it)
 
-    def parse(self, very_start_it, very_end_it):
+    def parse_comment(self, it):
+        comment_start = it.copy()
+        it.forward_to_line_end()
+        # handle tags in comment, tags overlapping with comment
+        it.forward_char()
+        self.buffer.apply_tag_by_name("comment", comment_start, it)
+        it.backward_char()
+
+    def parse(self, it, bound):
+        # If we are in a tag at the beginning, we don't do anything normally, but might have to break out.
+        # If we are at the end of a command/comment tag at the beginning, we have to apply that tag.
+        # Otherwise read characters one-by-one...
         buffer = self.buffer
-        it = very_start_it.copy()
+        if self.at_command_end:
+            if re.match(r"[A-Za-z]", it.get_char()):
+                command_start = it.copy()
+                it.forward_word_end()
+                self.buffer.apply_tag_by_name("command", command_start, it)
+            else:
+                self.at_command_end = False
+        finished = (it.compare(bound) >= 0)
         inline_math_start = None
-        finished = False
         while not finished:
             match it.get_char():
                 case "%":
-                    start_it = it.copy()
-                    it.forward_to_line_end()
-                    buffer.apply_tag_by_name("comment", start_it, it)
+                    self.parse_comment(it)
                 case "\\":
-                    start_it = it.copy()
+                    command_start = it.copy()
                     it.forward_char()
+                    if it.compare(bound) >= 0:
+                        self.buffer.apply_tag_by_name("command", command_start, it)
+                        self.at_command_end = True
+                        return
                     match it.get_char():
                         case "\\":
                             it.forward_char()
-                            buffer.apply_tag_by_name("newline", start_it, it)
+                            self.buffer.apply_tag_by_name("newline", command_start, it)
                         case " ":
-                            pass
+                            self.buffer.apply_tag_by_name("command", command_start, it)
                         case ch if re.match(r"[A-Za-z]", ch):
                             it.forward_word_end()
-                            buffer.apply_tag_by_name("command", start_it, it)
+                            self.buffer.apply_tag_by_name("command", command_start, it)
                             it.backward_char()
                         case _:
                             pass
                 case "$":
-                    end_it = it.copy()
-                    end_it.forward_char()
-                    if end_it.get_char() != "$":
+                    peek = it.copy()
+                    peek.forward_char()
+                    if peek.get_char() != "$":
                         if inline_math_start is not None:
                             it.forward_char()
                             buffer.apply_tag_by_name("inline-math",inline_math_start, it)
@@ -66,6 +112,6 @@ class LatexParser:
                             inline_math_start = it.copy()
                     else:
                         it.forward_char()
-            if not it.forward_char() or not it.in_range(very_start_it, very_end_it):
+            if not it.forward_char() or it.compare(bound) >= 0:
                 finished = True
 
