@@ -15,15 +15,15 @@ class LatexToImage(GObject.Object):
     def __init__(self, text):
         super().__init__()
         self.compile_task = None
-        self.text = TEX_HEADER + text + TEX_FOOTER
+        self.text = self.TEX_HEADER + text + self.TEX_FOOTER
 
     def compile_async(self, cancellable, callback, user_data = None):
         if self.compile_task is not None:
             error = GLib.Error("Already compiling",
                                Gio.io_error_quark(),
                                Gio.IOErrorEnum.PENDING)
-           Gio.Task.report_error(self, callback, user_data, None, error)
-           return
+            Gio.Task.report_error(self, callback, user_data, None, error)
+            return
 
         cancellable = cancellable or Gio.Cancellable()
 
@@ -39,41 +39,60 @@ class LatexToImage(GObject.Object):
         self.compile_task = task
 
         bytes = GLib.Bytes.new(self.text.encode('utf-8'))
-        self.filename = self.PWD + GLib.uuid_string_random()
-        filename = self.filename + '.tex'
-        file = Gio.file.new_for_path(filename)
-        file.replace_contents_bytes_async(contents=bytes,
-                                          etag=None,
-                                          make_backup=False,
-                                          flags=Gio.FileCreateFlags.NONE,
-                                          cancellable=cancellable,
-                                          callback=self.compile_cb1,
-                                          user_data=task)
+        self.file, iostream = Gio.File.new_tmp('XXXXXX.tex')
+        self.file.replace_contents_bytes_async(contents=bytes,
+                                         etag=None,
+                                         make_backup = False,
+                                         flags = Gio.FileCreateFlags.NONE,
+                                         cancellable=cancellable,
+                                         callback=self.compile_cb1,
+                                         user_data=task)
 
     def compile_cb1(self, file, result, task):
         try:
             file.replace_contents_finish(result)
         except GLib.Error as err:
+            err.message = "Writing file failed: " + self.file.get_path()
             task.return_error(err)
             return
 
-        cmd = ['flatpak-spawn', '--host', 'pdflatex', '--shell-escape'
-               '--interaction=nonstopmode',  file.get_path()]
-        flags = Gio.SubprocessFlags.STDOUT_SILENCE
-        flags = flags | Gio.SubprocessFlags.STDERR_SILENCE
+        print("Writing file success: " + self.file.get_path())
+        pwd = self.file.get_parent().get_path()
+        cmd = ['flatpak-spawn', '--host', '--directory=' + pwd, 'pdflatex', '--shell-escape',
+               '--interaction=nonstopmode',   self.file.get_path()]
+        flags = Gio.SubprocessFlags.STDOUT_PIPE
+        flags = flags | Gio.SubprocessFlags.STDERR_PIPE
         proc = Gio.Subprocess.new(cmd, flags)
-        proc.wait_async(cancellable, self.compile_cb2, task)
+        cancellable = task.get_cancellable()
+        proc.communicate_utf8_async(None, cancellable, self.compile_cb2, task)
 
     def compile_cb2(self, proc, result, task):
         try:
-            source.wait_finish(result)
+            success, out_str, err_str = proc.communicate_utf8_finish(result)
         except GLib.Error as err:
             task.return_error(err)
             return
-        if not source.get_successful():
-            err = GLib.Error("Compilation failed",
-                             GLib.Spawn_error_quark(),
-                             GLib.SpawnErrorEnum.FAILED)
+
+        #print("OUTPUT of: " + self.file.get_path() + "\n" + out_str + "\n")
+        #print("STDERR of: " + self.file.get_path() + "\n" + err_str + "\n")
+        print(success, self.file.get_parent().get_path(), self.file.query_exists())
+
+        path = self.file.get_path()[:-4]
+        texpath = path + ".tex"
+        texfile = Gio.File.new_for_path(texpath)
+        print(path + " Tex file extists: ", texfile.query_exists())
+        logpath = path + ".log"
+        logfile = Gio.File.new_for_path(logpath)
+        print(path + " Log file extists: ", logfile.query_exists())
+        pdfpath = path + ".pdf"
+        pdffile = Gio.File.new_for_path(pdfpath)
+        print(path + " Pdf file extists: ", pdffile.query_exists())
+        pngpath = path + ".png"
+        pngfile = Gio.File.new_for_path(pngpath)
+        print(path + " Png file extists: ", pngfile.query_exists())
+
+        if success is False:
+            err = GLib.Error("Compilation failed: " + path + ".tex")
             task.return_error(err)
             return
         task.return_boolean(True)
@@ -92,7 +111,7 @@ class LatexToImage(GObject.Object):
         if not success:
             raise Error("Compilation failed")
 
-        filename = self.filename + ".png"
-        img = Gtk.image.new_from_file(filename)
+        filename = self.file.get_path()[:-4] + ".png"
+        img = Gtk.Image.new_from_file(filename)
         return img
 
