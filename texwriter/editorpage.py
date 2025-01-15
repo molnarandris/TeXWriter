@@ -315,14 +315,12 @@ class EditorPage(Gtk.ScrolledWindow):
                 converter = LatexToImage(text)
                 mark = Gtk.TextMark.new(None, True)
                 buffer.add_mark(mark, it)
-                print(text)
 
                 # This is bad: if compilation finishes early, we insert a
                 # picture in buffer that invalidates out iterator.
                 converter.compile_async(None, self.compile_finish, mark)
 
     def compile_finish(self, converter, result, mark):
-        print(converter)
         try:
             img = converter.compile_finish(result)
         except GLib.Error as err:

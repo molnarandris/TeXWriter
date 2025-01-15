@@ -56,7 +56,6 @@ class LatexToImage(GObject.Object):
             task.return_error(err)
             return
 
-        print("Writing file success: " + self.file.get_path())
         pwd = self.file.get_parent().get_path()
         cmd = ['flatpak-spawn', '--host', '--directory=' + pwd, 'pdflatex', '--shell-escape',
                '--interaction=nonstopmode',   self.file.get_path()]
@@ -75,21 +74,13 @@ class LatexToImage(GObject.Object):
 
         #print("OUTPUT of: " + self.file.get_path() + "\n" + out_str + "\n")
         #print("STDERR of: " + self.file.get_path() + "\n" + err_str + "\n")
-        print(success, self.file.get_parent().get_path(), self.file.query_exists())
 
         path = self.file.get_path()[:-4]
-        texpath = path + ".tex"
-        texfile = Gio.File.new_for_path(texpath)
-        print(path + " Tex file extists: ", texfile.query_exists())
-        logpath = path + ".log"
-        logfile = Gio.File.new_for_path(logpath)
-        print(path + " Log file extists: ", logfile.query_exists())
-        pdfpath = path + ".pdf"
-        pdffile = Gio.File.new_for_path(pdfpath)
-        print(path + " Pdf file extists: ", pdffile.query_exists())
-        pngpath = path + ".png"
-        pngfile = Gio.File.new_for_path(pngpath)
-        print(path + " Png file extists: ", pngfile.query_exists())
+        self.img = Gtk.Image.new_from_file(path + ".png")
+        for ext in ["aux", "log", "tex", "pdf", "png"]:
+            f = Gio.File.new_for_path(path + "." + ext)
+            f.delete(None)
+
 
         if success is False:
             err = GLib.Error("Compilation failed: " + path + ".tex")
@@ -111,7 +102,5 @@ class LatexToImage(GObject.Object):
         if not success:
             raise Error("Compilation failed")
 
-        filename = self.file.get_path()[:-4] + ".png"
-        img = Gtk.Image.new_from_file(filename)
-        return img
+        return self.img
 
