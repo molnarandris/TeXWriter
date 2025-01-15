@@ -7,6 +7,7 @@ from gi.repository import GLib
 from gi.repository import Adw
 from .autocomplete import AutocompletePopover
 from .parser import LatexParser
+from .latex_to_image import LatexToImage
 
 TEXT_ONLY = Gtk.TextSearchFlags.TEXT_ONLY
 logger = logging.getLogger("Texwriter")
@@ -33,6 +34,7 @@ class EditorPage(Gtk.ScrolledWindow):
         buffer.create_tag('highlight', background='red')
 
         self.parser = LatexParser(buffer)
+
 
     @property
     def modified(self):
@@ -296,4 +298,39 @@ class EditorPage(Gtk.ScrolledWindow):
         self.textview.scroll_to_iter(it, 0.3, False, 0, 0)
         buffer.place_cursor(it)
         self.textview.grab_focus()
+
+    def convert_inline_math(self):
+        buffer = self.textview.props.buffer
+        it = buffer.get_start_iter()
+        tag = buffer.props.tag_table.lookup("inline-math")
+        if tag is None:
+            return
+        start = False
+        while it.forward_to_tag_toggle(tag):
+            start = not start
+            if start:
+                start_it = it.copy()
+            else:
+                text = buffer.get_text(start_it, it, False)
+                converter = LatexToImage(text)
+                mark = Gtk.TextMark.new(None, True)
+                buffer.add_mark(mark, it)
+                print(text)
+
+                # This is bad: if compilation finishes early, we insert a
+                # picture in buffer that invalidates out iterator.
+                converter.compile_async(None, self.compile_finish, mark)
+
+    def compile_finish(self, converter, result, mark):
+        print(converter)
+        try:
+            img = converter.compile_finish(result)
+        except GLib.Error as err:
+            print("Inline math compilation has failed:", err)
+            return
+
+        paint = img.get_paintable()
+        buffer = self.textview.props.buffer
+        it = buffer.get_iter_at_mark(mark)
+        buffer.insert_paintable(it, paint)
 

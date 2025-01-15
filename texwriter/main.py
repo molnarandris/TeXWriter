@@ -56,6 +56,7 @@ class TexwriterApplication(Adw.Application):
         self.set_accels_for_action("win.save(false)", ['<primary>s'])
         self.set_accels_for_action("win.save(true)", ['<primary><shift>s'])
         self.set_accels_for_action("win.compile", ['F5'])
+        self.set_accels_for_action("win.convert-inline-math", ['F6'])
         self.set_accels_for_action("win.synctex-fwd", ['F7'])
 
 

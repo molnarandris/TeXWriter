@@ -84,6 +84,10 @@ class TexwriterWindow(Adw.ApplicationWindow):
         action.connect("activate", self.on_synctex_fwd_action)
         self.add_action(action)
 
+        action = Gio.SimpleAction.new("convert-inline-math", None)
+        action.connect("activate", self.on_convert_inline_math_action)
+        self.add_action(action)
+
         # Setting paned resize-start-child and resize-end-child True
         # makes the paned to keep the relative position at resize.
         # However, this doesn't work from the ui file.
@@ -281,4 +285,8 @@ class TexwriterWindow(Adw.ApplicationWindow):
         if stack.props.visible_child_name == "log":
             self.pdf_log_switch.set_icon_name("pdf-symbolic")
             self.pdf_log_switch.set_tooltip_text("View pdf")
+
+    def on_convert_inline_math_action(self, action, param):
+        self.editorpage.convert_inline_math()
+
 
