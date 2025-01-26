@@ -95,9 +95,8 @@ class LatexParser:
                 self.buffer.apply_tag_by_name("command", command_start, it)
             else:
                 self.at_command_end = False
-        finished = (it.compare(bound) >= 0)
         inline_math_start = None
-        while not finished:
+        while it.compare(bound) < 0:
             match it.get_char():
                 case "%":
                     self.parse_comment(it)
@@ -132,6 +131,5 @@ class LatexParser:
                             inline_math_start = it.copy()
                     else:
                         it.forward_char()
-            if not it.forward_char() or it.compare(bound) >= 0:
-                finished = True
+            it.forward_char()
 
