@@ -79,6 +79,15 @@ class LatexParser:
                 self.buffer.remove_tag(tag, it, end_it)
                 if end_it.compare(bound) > 0:
                     bound = end_it
+        if self.in_command:
+            if not re.match(r"[A-Za-z]", it.get_char()):
+                end_it = it.copy()
+                tagtable = self.buffer.get_tag_table()
+                tag = tagtable.lookup("command")
+                end_it.forward_to_tag_toggle(tag)
+                self.buffer.remove_tag(tag, it, end_it)
+                if end_it.compare(bound) > 0:
+                    bound = end_it
         if self.at_command_end:
             if re.match(r"[A-Za-z]", it.get_char()):
                 command_start = it.copy()
