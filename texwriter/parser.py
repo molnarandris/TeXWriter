@@ -7,15 +7,6 @@ class LatexParser:
         buffer.connect("insert-text", self.before_buffer_insert_text)
         buffer.connect_after("insert-text", self.after_buffer_insert_text)
 
-        command_tag = buffer.create_tag("command")
-        command_tag.props.foreground = "green"
-        comment_tag = buffer.create_tag("comment")
-        comment_tag.props.foreground = "gray"
-        newline_tag = buffer.create_tag("newline")
-        inline_math_tag = buffer.create_tag("inline-math")
-        inline_math_tag.props.background = "lightgray"
-        newline_tag.props.foreground = "green"
-
         self.buffer = buffer
 
         self.in_comment = False

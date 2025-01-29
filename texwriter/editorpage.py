@@ -8,6 +8,7 @@ from gi.repository import Adw
 from .autocomplete import AutocompletePopover
 from .parser import LatexParser
 from .latex_to_image import LatexToImage
+from .latexbuffer import LatexBuffer
 
 TEXT_ONLY = Gtk.TextSearchFlags.TEXT_ONLY
 logger = logging.getLogger("Texwriter")
@@ -29,7 +30,8 @@ class EditorPage(Gtk.ScrolledWindow):
         self.file = None
 
         self.popover = AutocompletePopover(self.textview)
-        buffer = self.textview.get_buffer()
+        buffer = LatexBuffer()
+        self.textview.set_buffer(buffer)
         buffer.connect("modified-changed", self.on_buffer_modified_changed)
         buffer.create_tag('highlight', background='red')
 

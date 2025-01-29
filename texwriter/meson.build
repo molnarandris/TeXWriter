@@ -30,6 +30,7 @@ texwriter_sources = [
   'resultviewer.py',
   'parser.py',
   'latex_to_image.py',
+  'latexbuffer.py'
 ]
 
 install_data(texwriter_sources, install_dir: moduledir)
