@@ -320,9 +320,9 @@ class EditorPage(Gtk.ScrolledWindow):
 
                 # This is bad: if compilation finishes early, we insert a
                 # picture in buffer that invalidates out iterator.
-                converter.compile_async(None, self.compile_finish, mark)
+                converter.compile_async(None, self.converter_compile_finish, mark)
 
-    def compile_finish(self, converter, result, mark):
+    def converter_compile_finish(self, converter, result, mark):
         try:
             img = converter.compile_finish(result)
         except GLib.Error as err:
